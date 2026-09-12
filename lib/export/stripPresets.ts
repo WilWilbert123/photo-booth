@@ -1,0 +1,321 @@
+export interface StripPreset {
+  id: string;
+  name: string;
+  category: 'lifestyle' | 'pirates' | 'tech' | 'classic' | 'vintage';
+  shotCount: number;
+  aspectRatio: number; // width / height ratio
+  defaultHeader: string;
+  defaultSubtitle: string;
+  badgeText: string;
+  backgroundColor: string;
+  borderColor: string;
+  textColor: string;
+  accentColor: string;
+  frameRadius: number;
+  hasFrameNumbers?: boolean;
+  hasBarcode?: boolean;
+  decorationType:
+    | 'family'
+    | 'hearts'
+    | 'sparkles'
+    | 'star'
+    | 'crown'
+    | 'lock'
+    | 'korean'
+    | 'film'
+    | 'classic'
+    | 'pirate'
+    | 'bounty'
+    | 'terminal'
+    | 'hacker'
+    | 'shield';
+  description: string;
+}
+
+export const STRIP_PRESETS: StripPreset[] = [
+  // --- PIRATES & BOUNTY ---
+  {
+    id: 'pirate-wanted',
+    name: 'Pirate Wanted Poster',
+    category: 'pirates',
+    shotCount: 3,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'WANTED',
+    defaultSubtitle: 'DEAD OR ALIVE',
+    badgeText: 'REWARD: ฿ 3,000,000,000',
+    backgroundColor: '#EED9B3',
+    borderColor: '#3D2008',
+    textColor: '#2E1503',
+    accentColor: '#854D0E',
+    frameRadius: 4,
+    decorationType: 'pirate',
+    description: 'Iconic anime/pirate wanted poster with grand line bounty reward',
+  },
+  {
+    id: 'bounty-hunter',
+    name: 'Bounty Hunter Wanted',
+    category: 'pirates',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'MOST WANTED',
+    defaultSubtitle: 'DEAD OR ALIVE • APPREHEND',
+    badgeText: 'BOUNTY CLAIM: $1,000,000',
+    backgroundColor: '#1C1917',
+    borderColor: '#D97706',
+    textColor: '#FEF3C7',
+    accentColor: '#F59E0B',
+    frameRadius: 8,
+    decorationType: 'bounty',
+    description: 'Wild West & cyberpunk bounty hunter wanted poster',
+  },
+
+  // --- TECH & DEVELOPER TITLES ---
+  {
+    id: 'software-engineer',
+    name: 'Software Engineer',
+    category: 'tech',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'SOFTWARE ENGINEER',
+    defaultSubtitle: 'git commit -m "ship it" • 10x Dev',
+    badgeText: 'STATUS: 200 OK • DEPLOYED',
+    backgroundColor: '#0D1117',
+    borderColor: '#388BFD',
+    textColor: '#F0F6FC',
+    accentColor: '#58A6FF',
+    frameRadius: 8,
+    decorationType: 'terminal',
+    description: 'Dark terminal IDE aesthetics with git commit tags and status badges',
+  },
+  {
+    id: 'black-hat',
+    name: 'Black Hat Hacker',
+    category: 'tech',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'BLACK HAT HACKER',
+    defaultSubtitle: 'SYSTEM OVERRIDE • ROOT ACCESS',
+    badgeText: '0xDEADBEEF • UNTRACEABLE',
+    backgroundColor: '#050505',
+    borderColor: '#00FF66',
+    textColor: '#00FF66',
+    accentColor: '#22C55E',
+    frameRadius: 4,
+    decorationType: 'hacker',
+    description: 'Matrix green terminal override layout with hex memory dump detailing',
+  },
+  {
+    id: 'red-hat',
+    name: 'Red Hat Security',
+    category: 'tech',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'RED HAT DEFENDER',
+    defaultSubtitle: 'CYBERSECURITY & THREAT INTEL',
+    badgeText: 'FIREWALL ACTIVE • 0 BREACHES',
+    backgroundColor: '#0F172A',
+    borderColor: '#DC2626',
+    textColor: '#FEE2E2',
+    accentColor: '#EF4444',
+    frameRadius: 8,
+    decorationType: 'shield',
+    description: 'Red team/blue team cybersecurity defense badge with threat monitoring',
+  },
+
+  // --- LIFESTYLE & RELATIONSHIPS ---
+  {
+    id: 'family',
+    name: 'Family Memories',
+    category: 'lifestyle',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'FAMILY MEMORIES',
+    defaultSubtitle: 'Together Is Our Favorite Place',
+    badgeText: 'EST. 2026 • FAMILY FIRST',
+    backgroundColor: '#FDFBF7',
+    borderColor: '#1E293B',
+    textColor: '#0F172A',
+    accentColor: '#D97706',
+    frameRadius: 14,
+    decorationType: 'family',
+    description: 'Warm cream aesthetic with gold accents and family crest detailing',
+  },
+  {
+    id: 'couple',
+    name: 'Couple & Romance',
+    category: 'lifestyle',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'YOU & ME FOREVER',
+    defaultSubtitle: 'Two Hearts • One Story',
+    badgeText: 'LOCKED IN LOVE • ALWAYS',
+    backgroundColor: '#FFF1F2',
+    borderColor: '#E11D48',
+    textColor: '#881337',
+    accentColor: '#FB7185',
+    frameRadius: 16,
+    decorationType: 'hearts',
+    description: 'Romantic rose pink frame with delicate double-heart emblems',
+  },
+  {
+    id: 'besties',
+    name: 'Best Friends / BFF',
+    category: 'lifestyle',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'PARTNERS IN CRIME',
+    defaultSubtitle: 'BFF Studio • Forever & Always',
+    badgeText: 'BESTIES 4EVER • SQUAD',
+    backgroundColor: '#F3E8FF',
+    borderColor: '#7C3AED',
+    textColor: '#4C1D95',
+    accentColor: '#A855F7',
+    frameRadius: 16,
+    decorationType: 'sparkles',
+    description: 'Vibrant lavender frame with sparkle graphics and BFF stamp',
+  },
+  {
+    id: 'solo',
+    name: 'Solo Studio',
+    category: 'lifestyle',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'PORTRAIT STUDIO',
+    defaultSubtitle: 'Self Love & Editorial Vibes',
+    badgeText: 'SOLO EDITION • VOL. 01',
+    backgroundColor: '#09090B',
+    borderColor: '#FAFAFA',
+    textColor: '#FAFAFA',
+    accentColor: '#E4E4E7',
+    frameRadius: 8,
+    decorationType: 'star',
+    description: 'Sleek dark magazine editorial layout with crisp white typography',
+  },
+  {
+    id: 'single',
+    name: 'Single & Fabulous',
+    category: 'lifestyle',
+    shotCount: 3,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'MAIN CHARACTER',
+    defaultSubtitle: 'Single, Thriving & Fabulous',
+    badgeText: '100% INDEPENDENT • CROWNED',
+    backgroundColor: '#FEF3C7',
+    borderColor: '#D97706',
+    textColor: '#78350F',
+    accentColor: '#F59E0B',
+    frameRadius: 14,
+    decorationType: 'crown',
+    description: 'Bright golden yellow style celebrating independence and confidence',
+  },
+  {
+    id: 'taken',
+    name: 'Taken With Love',
+    category: 'lifestyle',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'OFF THE MARKET',
+    defaultSubtitle: 'Taken & Deeply Loved',
+    badgeText: 'MATCH MADE IN HEAVEN',
+    backgroundColor: '#18181B',
+    borderColor: '#991B1B',
+    textColor: '#FECDD3',
+    accentColor: '#F43F5E',
+    frameRadius: 14,
+    decorationType: 'lock',
+    description: 'Luxurious dark velvet red frame with relationship lock stamp',
+  },
+
+  // --- PHOTOBOOTH & VINTAGE ---
+  {
+    id: 'korean-vintage',
+    name: 'Korean Photobooth',
+    category: 'classic',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'LIFE MEMORIES',
+    defaultSubtitle: '人生四片 • Life Four Cuts Studio',
+    badgeText: 'K-BOOTH • 01/04 MEMORIES',
+    backgroundColor: '#EEF2FF',
+    borderColor: '#312E81',
+    textColor: '#1E1B4B',
+    accentColor: '#6366F1',
+    frameRadius: 10,
+    hasFrameNumbers: true,
+    hasBarcode: true,
+    decorationType: 'korean',
+    description: 'Authentic Life Four Cuts Korean studio strip with frame numbers & barcode',
+  },
+  {
+    id: 'vintage-3',
+    name: 'Vintage 35mm Film',
+    category: 'vintage',
+    shotCount: 3,
+    aspectRatio: 16 / 10,
+    defaultHeader: 'RETRO FILM LAB',
+    defaultSubtitle: '35mm Analog • ISO 400 Film Grain',
+    badgeText: 'ANALOG ARCHIVE • 1984',
+    backgroundColor: '#F5EBE0',
+    borderColor: '#44403C',
+    textColor: '#292524',
+    accentColor: '#78716C',
+    frameRadius: 4,
+    decorationType: 'film',
+    description: 'Authentic retro analog 3-shot film strip with sepia warmth and grain',
+  },
+  {
+    id: 'classic-4',
+    name: 'Classic 4-Shot',
+    category: 'classic',
+    shotCount: 4,
+    aspectRatio: 4 / 3,
+    defaultHeader: 'PHOTO BOOTH',
+    defaultSubtitle: 'Official Studio Memory',
+    badgeText: 'ORIGINAL STRIP',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#18181B',
+    textColor: '#18181B',
+    accentColor: '#52525B',
+    frameRadius: 8,
+    decorationType: 'classic',
+    description: 'The iconic black and white photobooth vertical 4-shot layout',
+  },
+  {
+    id: 'grid-2x2',
+    name: '2x2 Photocard Grid',
+    category: 'classic',
+    shotCount: 4,
+    aspectRatio: 1,
+    defaultHeader: 'MEMORIES COLLAGE',
+    defaultSubtitle: '2x2 Grid Edition',
+    badgeText: 'QUAD MEMORY',
+    backgroundColor: '#F4F4F5',
+    borderColor: '#27272A',
+    textColor: '#18181B',
+    accentColor: '#3F3F46',
+    frameRadius: 12,
+    decorationType: 'classic',
+    description: 'Square 2x2 grid collage format perfect for social media sharing',
+  },
+  {
+    id: 'polaroid',
+    name: 'Polaroid Instant',
+    category: 'vintage',
+    shotCount: 1,
+    aspectRatio: 1,
+    defaultHeader: 'INSTANT MEMORY',
+    defaultSubtitle: 'Captured Live',
+    badgeText: 'POLAROID IMPRESSION',
+    backgroundColor: '#FAFAFA',
+    borderColor: '#E4E4E7',
+    textColor: '#27272A',
+    accentColor: '#71717A',
+    frameRadius: 4,
+    decorationType: 'film',
+    description: 'Classic physical instant polaroid frame with handwritten margin space',
+  },
+];
+
+export function getStripPreset(presetId: string): StripPreset {
+  return STRIP_PRESETS.find((p) => p.id === presetId) || STRIP_PRESETS[0];
+}
