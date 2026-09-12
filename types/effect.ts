@@ -6,7 +6,8 @@ export type EffectCategory =
   | 'color'
   | 'texture'
   | 'lens'
-  | 'digital';
+  | 'digital'
+  | 'prop';
 
 export interface EffectParameter {
   id: string;
@@ -29,6 +30,7 @@ export interface EffectDefinition {
   pixelGrade?: string;
   parameters?: EffectParameter[];
   overlayType?: 'light-leak' | 'grain' | 'dust' | 'vignette' | 'vignette-heavy' | 'scanlines' | 'portrait-blur' | 'real-vintage' | 'beauty-smooth';
+  propType?: 'sunglasses' | 'cowboy-hat';
 }
 
 export interface EffectState {

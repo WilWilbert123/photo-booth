@@ -1,5 +1,6 @@
 import { effectEngine } from '../effects/engine';
 import { ExportFormat } from '@/types/photo';
+import { ARFaceFeatures } from '../effects/arTracker';
 
 export async function processHighResSnapshot(
   sourceVideo: HTMLVideoElement,
@@ -7,13 +8,14 @@ export async function processHighResSnapshot(
   strength: number = 100,
   isMirrored: boolean = true,
   format: ExportFormat = 'image/jpeg',
-  quality: number = 0.92
+  quality: number = 0.92,
+  arFeatures?: ARFaceFeatures | null
 ): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = sourceVideo.videoWidth || 1920;
   canvas.height = sourceVideo.videoHeight || 1080;
 
-  effectEngine.renderToCanvas(sourceVideo, canvas, effectId, strength, isMirrored);
+  effectEngine.renderToCanvas(sourceVideo, canvas, effectId, strength, isMirrored, arFeatures);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(

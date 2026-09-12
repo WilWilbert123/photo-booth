@@ -43,7 +43,7 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   currentPosePrompt: null,
   theme: 'light',
   isFullscreen: false,
-  activeTab: 'settings',
+  activeTab: 'booth',
   storageLocation: 'IndexedDB (Browser)',
   maxStorageSize: '500 MB',
   selectedStripLayout: 'family',

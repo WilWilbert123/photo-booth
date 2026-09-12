@@ -1,4 +1,5 @@
 import { EFFECTS_REGISTRY } from './registry';
+import { ARFaceFeatures } from './arTracker';
 
 export class EffectEngine {
   // Offscreen canvases reused across frames to avoid GC pressure
@@ -22,7 +23,8 @@ export class EffectEngine {
     targetCanvas: HTMLCanvasElement,
     effectId: string,
     strength: number = 100,
-    isMirrored: boolean = true
+    isMirrored: boolean = true,
+    arFeatures?: ARFaceFeatures | null
   ): void {
     const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
@@ -98,7 +100,67 @@ export class EffectEngine {
     if (effect.glShader === 'scanlines') {
       this.drawScanlines(ctx, width, height, strength);
     }
+    
+    // --- AR Props ---
+    if (effect.category === 'prop' && arFeatures && effect.propType) {
+      this.drawArProp(ctx, effect.propType, arFeatures, isMirrored, width, height);
+    }
   }
+
+  // ---- AR Prop Drawing ----
+  private drawArProp(
+    ctx: CanvasRenderingContext2D,
+    propType: string,
+    features: ARFaceFeatures,
+    isMirrored: boolean,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
+    const img = this.getPropImage(propType);
+    if (!img) return;
+
+    ctx.save();
+    
+    // When mirrored, X coordinates from MediaPipe need to be flipped
+    let cx = features.noseTip.x;
+    if (isMirrored) {
+      ctx.translate(canvasWidth, 0);
+      ctx.scale(-1, 1);
+    }
+
+    if (propType === 'sunglasses') {
+      const eyeCenterY = (features.leftEye.y + features.rightEye.y) / 2;
+      const eyeCenterX = (features.leftEye.x + features.rightEye.x) / 2;
+      const width = features.width * 1.2;
+      const height = width * 0.4;
+      
+      ctx.translate(eyeCenterX, eyeCenterY);
+      ctx.rotate(features.angle);
+      ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    } else if (propType === 'cowboy-hat') {
+      const width = features.width * 1.8;
+      const height = width * 0.6;
+      
+      // Position above the forehead
+      ctx.translate(features.forehead.x, features.forehead.y - height * 0.3);
+      ctx.rotate(features.angle);
+      ctx.drawImage(img, -width / 2, -height / 2, width, height);
+    }
+
+    ctx.restore();
+  }
+
+  private propImages: Record<string, HTMLImageElement> = {};
+  
+  private getPropImage(propType: string): HTMLImageElement | null {
+    if (this.propImages[propType]) return this.propImages[propType];
+    
+    const img = new Image();
+    img.src = `/props/${propType}.svg`;
+    this.propImages[propType] = img;
+    return null; // Return null first time, will be drawn next frame once loaded
+  }
+
 
   // ---- CSS filter strength interpolation ----
   private scaleFilter(cssFilter: string, strength: number): string {

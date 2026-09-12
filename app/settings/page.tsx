@@ -1,21 +1,68 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useBoothStore } from '@/store/boothStore';
 import { useCameraStore } from '@/store/cameraStore';
 import { useEffectStore } from '@/store/effectStore';
 import { Toggle } from '@/components/ui/Toggle';
 import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
+import { getStorageQuota } from '@/lib/storage/migrations';
+import type { StorageQuotaInfo } from '@/types/storage';
 import { 
   Volume2, 
   Aperture, 
   Timer, 
   Info, 
   RotateCw, 
-  ChevronDown 
+  ChevronDown,
+  HardDrive,
+  Trash2,
+  Database
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
+
+  const loadQuota = () => {
+    getStorageQuota()
+      .then(q => setQuota(q))
+      .catch(err => console.error('Failed to load storage quota:', err));
+  };
+
+  useEffect(() => {
+    loadQuota();
+  }, []);
+
+  const handleClearCache = () => {
+    if (window.confirm("Are you sure you want to clear the app cache? This will free up space but might cause the initial load to be slower next time.")) {
+      if ('caches' in window) {
+        caches.keys()
+          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+          .then(() => {
+            loadQuota();
+            alert("Cache cleared successfully!");
+          })
+          .catch(() => alert("Failed to clear cache."));
+      }
+    }
+  };
+
+  const handleClearData = () => {
+    if (window.confirm("Are you sure you want to delete all photos, videos, and settings? This CANNOT be undone.")) {
+      try {
+        const req = window.indexedDB.deleteDatabase('PhotoBoothDB');
+        req.onsuccess = () => {
+          window.localStorage.clear();
+          window.location.reload();
+        };
+        req.onerror = () => {
+          alert("Failed to delete database.");
+        };
+      } catch (err) {
+        alert("Failed to clear data.");
+      }
+    }
+  };
   const { 
     isSoundEnabled, 
     isFlashEnabled, 
@@ -179,47 +226,105 @@ export default function SettingsPage() {
 
           {/* Storage Card */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-6 shadow-2xs">
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-4">Storage</h2>
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
+              <HardDrive className="w-5 h-5 text-zinc-500" />
+              Storage Management
+            </h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Storage Location */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-zinc-400 dark:text-zinc-400">
-                  Storage Location
-                </label>
-                <div className="relative">
-                  <select
-                    value={storageLocation}
-                    onChange={(e) => setStorageLocation(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer pr-10"
-                  >
-                    <option value="IndexedDB (Browser)">IndexedDB (Browser)</option>
-                    <option value="Local Storage">Local Storage</option>
-                    <option value="OPFS (Origin Private FS)">OPFS (Origin Private FS)</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex flex-col gap-5">
+                {/* Storage Usage Progress */}
+                {quota && (
+                  <div className="flex flex-col gap-2 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <div className="flex justify-between items-end mb-1">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Storage Used</span>
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                          {quota.formattedUsage} / {quota.formattedQuota}
+                        </span>
+                      </div>
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        {quota.usagePercentage}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          quota.usagePercentage > 90 ? 'bg-red-500' : 
+                          quota.usagePercentage > 75 ? 'bg-amber-500' : 
+                          'bg-blue-500'
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, quota.usagePercentage))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Storage Location */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-400 dark:text-zinc-400">
+                      Storage Location
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={storageLocation}
+                        onChange={(e) => setStorageLocation(e.target.value)}
+                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer pr-10"
+                      >
+                        <option value="IndexedDB (Browser)">IndexedDB (Browser)</option>
+                        <option value="Local Storage">Local Storage</option>
+                        <option value="OPFS (Origin Private FS)">OPFS (Origin Private FS)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Max Storage Size */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-zinc-400 dark:text-zinc-400">
+                      Max Storage Size
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={maxStorageSize}
+                        onChange={(e) => setMaxStorageSize(e.target.value)}
+                        className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer pr-10"
+                      >
+                        <option value="250 MB">250 MB</option>
+                        <option value="500 MB">500 MB</option>
+                        <option value="1 GB">1 GB</option>
+                        <option value="2 GB">2 GB</option>
+                        <option value="Unlimited">Unlimited</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Max Storage Size */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-zinc-400 dark:text-zinc-400">
-                  Max Storage Size
-                </label>
-                <div className="relative">
-                  <select
-                    value={maxStorageSize}
-                    onChange={(e) => setMaxStorageSize(e.target.value)}
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-800 dark:text-zinc-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer pr-10"
-                  >
-                    <option value="250 MB">250 MB</option>
-                    <option value="500 MB">500 MB</option>
-                    <option value="1 GB">1 GB</option>
-                    <option value="2 GB">2 GB</option>
-                    <option value="Unlimited">Unlimited</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {/* Data Actions */}
+              <div className="flex flex-col gap-3 justify-end lg:border-l lg:border-zinc-100 lg:dark:border-zinc-800 lg:pl-8">
+                <div className="flex flex-col gap-1 mb-2">
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Clear Data</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Free up space by clearing cache or deleting all app data.
+                  </span>
                 </div>
+                <button
+                  onClick={handleClearCache}
+                  className="flex items-center gap-2 justify-center w-full px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-colors"
+                >
+                  <Database className="w-4 h-4" />
+                  Clear App Cache
+                </button>
+                <button
+                  onClick={handleClearData}
+                  className="flex items-center gap-2 justify-center w-full px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 rounded-xl transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete All Data
+                </button>
               </div>
             </div>
           </div>

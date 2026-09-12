@@ -435,7 +435,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
           </div>
 
           {/* Right Column: Clean Live Strip Preview Card */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center bg-zinc-950/90 p-3 rounded-2xl border border-zinc-800 min-h-[350px]">
+          <div className="lg:col-span-5 flex flex-col items-center justify-center bg-zinc-950/90 p-3 rounded-2xl border border-zinc-800 h-full min-h-[400px] overflow-hidden">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
               Live Strip Preview
             </span>
@@ -446,11 +446,11 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                 <span className="text-xs font-medium">Assembling Strip...</span>
               </div>
             ) : previewBlobUrl ? (
-              <div className="relative max-h-[340px] flex items-center justify-center">
+              <div className="relative w-full h-[350px] flex items-center justify-center overflow-hidden">
                 <img
                   src={previewBlobUrl}
                   alt="Live Photo Strip Preview"
-                  className="max-h-[330px] w-auto object-contain rounded-xl shadow-2xl"
+                  className="max-h-[100%] max-w-[100%] object-contain rounded-xl shadow-2xl"
                 />
               </div>
             ) : (
