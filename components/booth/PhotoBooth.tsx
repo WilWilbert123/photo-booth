@@ -16,6 +16,16 @@ import { useRouter } from 'next/navigation';
 
 export const PhotoBooth: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lastNavTime = useRef<number>(0);
+
+  const handleOpenSettings = () => {
+    const now = Date.now();
+    if (now - lastNavTime.current < 500) return;
+    lastNavTime.current = now;
+    setActiveTab('settings');
+    router.push('/settings');
+  };
+
   const [liveVideo, setLiveVideo] = useState<HTMLVideoElement | null>(null);
   const router = useRouter();
 
@@ -33,7 +43,8 @@ export const PhotoBooth: React.FC = () => {
     setActiveTab
   } = useBoothStore();
   
-  const { toggleMirror } = useCameraStore();
+  const { toggleMirror, stream, permissionState, error } = useCameraStore();
+  const isCameraActive = Boolean(stream && permissionState === 'granted' && !error);
 
   const [showFlash, setShowFlash] = useState(false);
   const [showMobileEffects, setShowMobileEffects] = useState(false);
@@ -44,6 +55,7 @@ export const PhotoBooth: React.FC = () => {
   }, []);
 
   const handleCaptureClick = () => {
+    if (!isCameraActive) return;
     if (isFlashEnabled) {
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 300);
@@ -95,10 +107,7 @@ export const PhotoBooth: React.FC = () => {
               </div>
             </button>
             <button 
-              onClick={() => {
-                setActiveTab('settings');
-                router.push('/settings');
-              }}
+              onClick={handleOpenSettings}
               className="w-10 h-10 rounded-full bg-zinc-900/40 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-zinc-900/60 transition-colors group relative"
             >
               <Settings2 className="w-4 h-4" />
@@ -154,7 +163,7 @@ export const PhotoBooth: React.FC = () => {
           </div>
 
           <div className="absolute left-1/2 -translate-x-1/2 z-20">
-            <CaptureButton onCapture={handleCaptureClick} disabled={isCapturing} />
+            <CaptureButton onCapture={handleCaptureClick} disabled={isCapturing || !isCameraActive} />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 z-20">

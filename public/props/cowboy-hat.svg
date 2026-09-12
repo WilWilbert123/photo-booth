@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60">
+  <!-- Hat Brim -->
+  <path d="M 0,40 C 20,55 80,55 100,40 Q 95,35 90,40 C 70,50 30,50 10,40 Q 5,35 0,40 Z" fill="#8B4513" />
+  <!-- Hat Crown -->
+  <path d="M 25,38 C 25,10 40,5 50,15 C 60,5 75,10 75,38 Z" fill="#A0522D" />
+  <path d="M 25,38 C 25,35 75,35 75,38" fill="none" stroke="#6B3410" stroke-width="4" />
+  <!-- Hat Band -->
+  <path d="M 25,35 C 35,38 65,38 75,35 L 75,32 C 65,35 35,35 25,32 Z" fill="#3E1A05" />
+</svg>

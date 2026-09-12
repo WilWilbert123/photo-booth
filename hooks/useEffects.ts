@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useEffectStore } from '@/store/effectStore';
 import { useCameraStore } from '@/store/cameraStore';
 import { effectEngine } from '@/lib/effects/engine';
+import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
+import { arTracker } from '@/lib/effects/arTracker';
 
 export function useEffects(
   videoRef: React.RefObject<HTMLVideoElement | null>,
@@ -17,6 +19,32 @@ export function useEffects(
     if (!video || !canvas || !stream) return;
 
     let isSubscribed = true;
+    let currentArFeatures: any = null;
+
+    // Async loop for AR tracking
+    const trackFace = async () => {
+      if (!isSubscribed) return;
+      
+      const effect = EFFECTS_REGISTRY.find(e => e.id === activeEffectId);
+      if (effect?.category === 'prop') {
+        try {
+          currentArFeatures = await arTracker.detectFace(video);
+        } catch (e) {
+          console.error("AR tracking error:", e);
+        }
+      } else {
+        currentArFeatures = null;
+      }
+      
+      // Schedule next tracking frame
+      if (isSubscribed) {
+        requestAnimationFrame(() => {
+          trackFace();
+        });
+      }
+    };
+
+    trackFace();
 
     const renderLoop = () => {
       if (!isSubscribed) return;
@@ -27,7 +55,7 @@ export function useEffects(
           canvas.height = video.videoHeight;
         }
 
-        effectEngine.renderToCanvas(video, canvas, activeEffectId, strength, isMirrored);
+        effectEngine.renderToCanvas(video, canvas, activeEffectId, strength, isMirrored, currentArFeatures);
       }
 
       animFrameRef.current = requestAnimationFrame(renderLoop);

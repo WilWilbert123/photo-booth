@@ -9,6 +9,8 @@ import { getStripPreset } from '@/lib/export/stripPresets';
 import { createBoomerangGifBlob } from '@/lib/export/gif';
 import { savePhotoToDB } from '@/lib/storage/photos';
 import { PhotoRecord, PhotoStripConfig } from '@/types/photo';
+import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
+import { arTracker } from '@/lib/effects/arTracker';
 
 export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>) {
   const {
@@ -34,8 +36,21 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const isCameraReady = useCallback((): boolean => {
+    const { stream, permissionState, error } = useCameraStore.getState();
+    if (permissionState === 'denied' || Boolean(error) || !stream) return false;
+
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack || !videoTrack.enabled || videoTrack.readyState !== 'live') return false;
+
+    if (!videoRef.current || videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
+      return false;
+    }
+    return true;
+  }, [videoRef]);
+
   const captureSingleSnapshot = useCallback(async (): Promise<Blob> => {
-    if (!videoRef.current) throw new Error('Video stream unavailable');
+    if (!isCameraReady()) throw new Error('Camera is turned off or video stream is unavailable');
 
     const { isSoundEnabled, isFlashEnabled } = useBoothStore.getState();
     const { activeEffectId, strength } = useEffectStore.getState();
@@ -44,16 +59,29 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
     if (isSoundEnabled) playShutterSound();
     if (isFlashEnabled && isSoundEnabled) playFlashSound();
 
+    let arFeatures = null;
+    const effect = EFFECTS_REGISTRY.find(e => e.id === activeEffectId);
+    if (effect?.category === 'prop') {
+      try {
+        arFeatures = await arTracker.detectFace(videoRef.current!);
+      } catch (e) {
+        console.error("AR track error on capture:", e);
+      }
+    }
+
     return processHighResSnapshot(
-      videoRef.current,
+      videoRef.current!,
       activeEffectId,
       strength,
-      isMirrored
+      isMirrored,
+      'image/jpeg',
+      0.92,
+      arFeatures
     );
-  }, [videoRef]);
+  }, [videoRef, isCameraReady]);
 
   const triggerCaptureSequence = useCallback(() => {
-    if (isCountingDown || isCapturing) return;
+    if (!isCameraReady() || isCountingDown || isCapturing) return;
 
     if (countdownDuration === 0) {
       executeCaptureFlow();
@@ -84,6 +112,10 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
   const isBoothSoundEnabled = () => useBoothStore.getState().isSoundEnabled;
 
   const executeCaptureFlow = useCallback(async () => {
+    if (!isCameraReady()) {
+      setIsCapturing(false);
+      return;
+    }
     setIsCapturing(true);
     
     const { mode, selectedStripLayout } = useBoothStore.getState();

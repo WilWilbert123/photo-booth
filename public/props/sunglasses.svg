@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40">
+  <!-- Left Lens -->
+  <path d="M 5,20 C 5,5 25,0 45,5 C 45,20 35,35 25,35 C 10,35 5,30 5,20 Z" fill="#000" />
+  <!-- Right Lens -->
+  <path d="M 95,20 C 95,5 75,0 55,5 C 55,20 65,35 75,35 C 90,35 95,30 95,20 Z" fill="#000" />
+  <!-- Bridge -->
+  <path d="M 45,5 Q 50,0 55,5" stroke="#333" stroke-width="3" fill="none" />
+  <!-- Arms -->
+  <path d="M 5,20 L -5,10" stroke="#333" stroke-width="3" fill="none" />
+  <path d="M 95,20 L 105,10" stroke="#333" stroke-width="3" fill="none" />
+  <!-- Reflections -->
+  <path d="M 15,10 Q 25,5 35,10" stroke="#fff" stroke-width="2" opacity="0.3" fill="none" />
+  <path d="M 65,10 Q 75,5 85,10" stroke="#fff" stroke-width="2" opacity="0.3" fill="none" />
+</svg>
