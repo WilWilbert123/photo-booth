@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, CameraOff, RefreshCw, Settings, Smartphone, Lock, X, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Settings, Smartphone, Lock, X, CheckCircle2, ShieldAlert, AppWindow, Globe } from 'lucide-react';
 import { useCamera } from '@/hooks/useCamera';
 import { useEffects } from '@/hooks/useEffects';
-import { Button } from '../ui/Button';
 
 interface CameraPreviewProps {
   onVideoRefAvailable?: (video: HTMLVideoElement) => void;
@@ -19,13 +18,23 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
+  const [activeGuideTab, setActiveGuideTab] = useState<'app' | 'browser'>('app');
 
   const { stream, permissionState, error, isLoading, initCamera } = useCamera();
   useEffects(videoRef, canvasRef);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsAndroidDevice(/android/i.test(navigator.userAgent));
+      const android = /android/i.test(navigator.userAgent);
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
+        document.referrer.includes('android-app://');
+
+      setIsAndroidDevice(android);
+      setIsStandaloneApp(standalone);
+      setActiveGuideTab(standalone ? 'app' : 'browser');
     }
   }, []);
 
@@ -68,10 +77,10 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
           </h3>
           
           <p className="text-xs sm:text-sm text-zinc-400 mb-6 leading-relaxed">
-            {error || 'Camera permission is required to capture live photos and video strips. Tap below to enable camera access.'}
+            {error || 'Camera access is required to capture live photos and video strips. Enable camera access to continue.'}
           </p>
 
-          {/* Primary Action Button (Enable Camera) */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
             <button
               onClick={initCamera}
@@ -86,22 +95,21 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
               <span>{isLoading ? 'Connecting...' : 'Enable Camera'}</span>
             </button>
 
-            {/* Android / Device Settings Helper Button */}
             <button
               onClick={() => setShowGuideModal(true)}
               className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all border border-zinc-700/80 active:scale-95"
             >
               <Settings className="w-4 h-4 text-blue-400" />
-              <span>{isAndroidDevice ? 'Android Settings Guide' : 'Permission Settings'}</span>
+              <span>{isAndroidDevice ? 'Android Settings Guide' : 'Camera Settings Guide'}</span>
             </button>
           </div>
 
         </div>
 
-        {/* Android / Device Camera Permission Guidance Modal */}
+        {/* Camera Permission Setup Modal */}
         {showGuideModal && (
           <div className="fixed inset-0 z-[100000] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl relative text-left space-y-5 text-white">
+            <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative text-left space-y-4 text-white">
               
               <button
                 onClick={() => setShowGuideModal(false)}
@@ -118,49 +126,115 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
                   <h4 className="text-base font-bold text-white">
                     {isAndroidDevice ? 'Enable Camera on Android' : 'Enable Camera Permission'}
                   </h4>
-                  <p className="text-xs text-zinc-400">Step-by-step browser camera permission setup</p>
+                  <p className="text-xs text-zinc-400">Choose your current mode to allow camera access</p>
                 </div>
               </div>
 
-              <div className="space-y-3 text-xs text-zinc-300 font-medium">
-                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                    1
-                  </span>
-                  <div className="flex-1 leading-relaxed">
-                    Look at the browser address bar at the top and tap the <strong className="text-white bg-zinc-800 px-1.5 py-0.5 rounded inline-flex items-center gap-1"><Lock className="w-3 h-3 text-blue-400 inline" /> Lock / Settings Icon</strong>.
-                  </div>
-                </div>
+              {/* Mode Selection Tabs (Installed App vs Browser) */}
+              <div className="flex items-center gap-2 p-1 bg-zinc-950 rounded-xl border border-zinc-800">
+                <button
+                  onClick={() => setActiveGuideTab('app')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    activeGuideTab === 'app'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <AppWindow className="w-3.5 h-3.5" />
+                  <span>Installed Home App</span>
+                </button>
 
-                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                    2
-                  </span>
-                  <div className="flex-1 leading-relaxed">
-                    Tap <strong className="text-white">Permissions</strong> or <strong className="text-white">Site Settings</strong> &gt; select <strong className="text-white">Camera</strong>.
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                    3
-                  </span>
-                  <div className="flex-1 leading-relaxed">
-                    Switch setting from <em>Blocked</em> to <strong className="text-emerald-400">Allow</strong>.
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                    4
-                  </span>
-                  <div className="flex-1 leading-relaxed">
-                    Return here and tap <strong className="text-blue-400">Enable Camera</strong> to start capturing!
-                  </div>
-                </div>
+                <button
+                  onClick={() => setActiveGuideTab('browser')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    activeGuideTab === 'browser'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Chrome Browser</span>
+                </button>
               </div>
 
-              <div className="pt-2 flex items-center justify-between">
+              {/* TAB 1: INSTALLED HOME APP MODE */}
+              {activeGuideTab === 'app' && (
+                <div className="space-y-2.5 text-xs text-zinc-300 font-medium animate-in fade-in duration-150">
+                  <p className="text-[11px] text-zinc-400 mb-2">
+                    For standalone installed apps on Android Home Screen:
+                  </p>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      1
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Open your Android phone's <strong className="text-white">Settings app</strong> &gt; tap <strong className="text-white">Apps</strong> (or <em>App Management</em>).
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      2
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Find and tap <strong className="text-white">PhotoBooth</strong> (or <strong>Chrome</strong>).
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      3
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Tap <strong className="text-white">Permissions</strong> &gt; <strong className="text-white">Camera</strong> &gt; select <strong className="text-emerald-400 font-bold">Allow only while using the app</strong>.
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      4
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Re-open PhotoBooth from your Home Screen and tap <strong className="text-blue-400">Enable Camera</strong> below!
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CHROME BROWSER MODE */}
+              {activeGuideTab === 'browser' && (
+                <div className="space-y-2.5 text-xs text-zinc-300 font-medium animate-in fade-in duration-150">
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      1
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Tap Chrome's address bar at top right: <strong className="text-white bg-zinc-800 px-1.5 py-0.5 rounded inline-flex items-center gap-1"><Lock className="w-3 h-3 text-blue-400 inline" /> Lock / Settings Icon</strong> or 3-Dots Menu (⋮).
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      2
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Tap <strong className="text-white">Permissions</strong> or <strong className="text-white">Site Settings</strong> &gt; select <strong className="text-white">Camera</strong>.
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      3
+                    </span>
+                    <div className="flex-1 leading-relaxed">
+                      Change setting from <em>Blocked</em> to <strong className="text-emerald-400 font-bold">Allow</strong>.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2">
                 <button
                   onClick={() => {
                     setShowGuideModal(false);
