@@ -20,7 +20,8 @@ import {
   Sparkles, Move, ArrowUp, ArrowDown, MoveVertical, RotateCcw, 
   ChevronLeft, ChevronRight, Palette, Layers, Grid, Skull, 
   Terminal, Heart, Camera, Film, Sun, Moon, Flower2, Zap, 
-  Ban, LayoutList, Columns2, Square, Grid2x2, Sparkles as ThemeSparklesIcon 
+  Ban, LayoutList, Columns2, Square, Grid2x2, Sparkles as ThemeSparklesIcon,
+  Maximize2, ZoomIn, X
 } from 'lucide-react';
 
 interface StripBuilderProps {
@@ -201,24 +202,52 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isZoomPreviewOpen, setIsZoomPreviewOpen] = useState(false);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const activeLayout = LAYOUT_FORMAT_OPTIONS.find((l) => l.id === selectedLayoutId) || LAYOUT_FORMAT_OPTIONS[0];
+  const isInitialOpenRef = useRef(true);
 
-  // Auto-select required photos for active layout
+  const activeLayout =
+    LAYOUT_FORMAT_OPTIONS.find((l) => l.id === selectedLayoutId) || LAYOUT_FORMAT_OPTIONS[0];
+
+  // Initialize selected photos ONLY ONCE on modal open (if empty), without overwriting user selections on theme/layout changes
   useEffect(() => {
-    if (isOpen && photos.length > 0) {
-      const requiredShots = activeLayout.shotCount;
-      setSelectedIds(photos.slice(0, requiredShots).map((p) => p.id));
+    if (isOpen) {
+      if (isInitialOpenRef.current) {
+        isInitialOpenRef.current = false;
+        if (photos.length > 0 && selectedIds.length === 0) {
+          const requiredShots = activeLayout.shotCount;
+          setSelectedIds(photos.slice(0, requiredShots).map((p) => p.id));
+        }
+      }
+    } else {
+      isInitialOpenRef.current = true;
     }
-  }, [isOpen, selectedLayoutId, photos]);
+  }, [isOpen, photos]);
+
+  const handleSelectLayout = (layoutId: string) => {
+    setSelectedLayoutId(layoutId);
+    const layoutObj = LAYOUT_FORMAT_OPTIONS.find((l) => l.id === layoutId);
+    if (layoutObj) {
+      setSelectedIds((prev) => (prev.length > layoutObj.shotCount ? prev.slice(0, layoutObj.shotCount) : prev));
+    }
+  };
 
   const handleSelectPreset = (preset: StripPreset) => {
     setSelectedPresetId(preset.id);
-    if (preset.id === 'grid-2x2') setSelectedLayoutId('grid-2x2');
-    else if (preset.id === 'polaroid') setSelectedLayoutId('polaroid');
-    else if (preset.shotCount === 4) setSelectedLayoutId('classic-4');
-    else setSelectedLayoutId('vertical-3');
+    let newLayoutId = selectedLayoutId;
+    if (preset.id === 'grid-2x2') newLayoutId = 'grid-2x2';
+    else if (preset.id === 'polaroid') newLayoutId = 'polaroid';
+    else if (preset.shotCount === 4) newLayoutId = 'classic-4';
+    else newLayoutId = 'vertical-3';
+
+    setSelectedLayoutId(newLayoutId);
+
+    const layoutObj = LAYOUT_FORMAT_OPTIONS.find((l) => l.id === newLayoutId);
+    if (layoutObj) {
+      // Preserve user selection! Only trim if selected count exceeds new layout max capacity
+      setSelectedIds((prev) => (prev.length > layoutObj.shotCount ? prev.slice(0, layoutObj.shotCount) : prev));
+    }
 
     setSelectedPatternId(preset.pattern || 'none');
     setHeaderText(preset.defaultHeader);
@@ -480,29 +509,30 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Themed Photo Strip Studio" maxWidth="5xl" contentPadding="p-3 sm:p-4">
-      <div className="flex flex-col gap-2">
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title="Themed Photo Strip Studio" maxWidth="full" contentPadding="p-2 sm:p-3">
+      <div className="flex flex-col gap-2 h-full flex-1 justify-between">
         
         {/* Step 1: Select Layout Format */}
-        <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5">
+        <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2 sm:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> 1. Select Layout Format
             </span>
-            <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+            <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
               {activeLayout.name} • {activeLayout.shotCount} Shots
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
             {LAYOUT_FORMAT_OPTIONS.map((layout) => {
               const isSelected = selectedLayoutId === layout.id;
               return (
                 <button
                   key={layout.id}
                   type="button"
-                  onClick={() => setSelectedLayoutId(layout.id)}
-                  className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                  onClick={() => handleSelectLayout(layout.id)}
+                  className={`flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border ${
                     isSelected
                       ? 'bg-blue-600 text-white border-blue-500 dark:border-blue-400 shadow-sm scale-[1.01]'
                       : 'bg-white dark:bg-zinc-900/90 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-white'
@@ -517,12 +547,12 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
         </div>
 
         {/* Step 2: Select Theme Presets & Category Tabs */}
-        <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-2">
+        <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2 sm:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
               <ThemeSparklesIcon className="w-3.5 h-3.5 text-pink-500 dark:text-pink-400" /> 2. Select Theme Preset Style
             </span>
-                       {/* Clean Vector Icon Category Filter Tabs */}
+            {/* Clean Vector Icon Category Filter Tabs */}
             <div className="flex flex-wrap items-center gap-1">
               {THEME_CATEGORY_TABS.map((tab) => {
                 const isActive = activeCategoryTab === tab.id;
@@ -531,9 +561,9 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveCategoryTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border ${
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold whitespace-nowrap transition-all border ${
                       isActive
-                        ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-sm'
+                        ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-xs'
                         : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -545,8 +575,8 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
             </div>
           </div>
 
-          {/* Clean Vector Filtered Preset Cards Grid (No Circle Dots!) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-32 overflow-y-auto pr-1 scrollbar-thin">
+          {/* Clean Vector Filtered Preset Cards Grid (All Presets Visible & Unclipped) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1 scrollbar-thin">
             {STRIP_PRESETS.filter(
               (preset) => activeCategoryTab === 'all' || preset.category === activeCategoryTab
             ).map((preset) => {
@@ -556,25 +586,25 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  className={`flex items-center gap-2 p-1.5 px-2.5 rounded-lg text-left transition-all border relative overflow-hidden ${
+                  className={`flex items-center gap-1.5 p-1 px-2 rounded-lg text-left transition-all border relative overflow-hidden h-[34px] ${
                     isSelected
-                      ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 dark:from-pink-950/80 dark:to-purple-950/80 border-pink-500 text-pink-950 dark:text-white ring-1 ring-pink-500 font-bold'
+                      ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 dark:from-pink-950/80 dark:to-purple-950/80 border-pink-500 text-pink-950 dark:text-white ring-1 ring-pink-500/50 font-bold shadow-xs'
                       : 'bg-white dark:bg-zinc-900/90 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-white'
                   }`}
                 >
                   <ThemeIcon type={preset.decorationType} className="w-3.5 h-3.5 text-pink-500 dark:text-pink-400 shrink-0" />
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-semibold truncate text-[11px] leading-tight text-zinc-900 dark:text-zinc-100">{preset.name}</span>
-                    <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-mono capitalize truncate">{preset.category}</span>
+                  <div className="flex flex-col min-w-0 flex-1 justify-center">
+                    <span className="font-semibold truncate text-[11px] leading-none text-zinc-900 dark:text-zinc-100 mb-0.5">{preset.name}</span>
+                    <span className="text-[9px] text-zinc-500 dark:text-zinc-400 font-mono capitalize truncate leading-none">{preset.category}</span>
                   </div>
                 </button>
               );
             })}
           </div>
 
-          {/* Clean Pattern Overlay Row (Flex-Wrap so all patterns fit on screen) */}
+          {/* Clean Pattern Overlay Row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 pt-1 border-t border-zinc-200 dark:border-zinc-800/80">
-            <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 whitespace-nowrap shrink-0">Pattern Overlay:</span>
+            <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 whitespace-nowrap shrink-0">Pattern Overlay:</span>
             <div className="flex flex-wrap items-center gap-1">
               {THEME_PATTERN_OPTIONS.map((pattern) => {
                 const isSelected = selectedPatternId === pattern.id;
@@ -583,9 +613,9 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                     key={pattern.id}
                     type="button"
                     onClick={() => handleSelectPattern(pattern.id)}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all border ${
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-all border ${
                       isSelected
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                        ? 'bg-purple-600 text-white border-purple-400 shadow-xs font-semibold'
                         : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200'
                     }`}
                   >
@@ -599,71 +629,71 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
         </div>
 
         {/* 2-Column Studio Workspace (Fit 1-Screen) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-stretch flex-1 min-h-0">
           
           {/* Left Column: Customization, Photo Picker & Frame Controls */}
           <div className="lg:col-span-7 flex flex-col gap-2">
             
             {/* Step 3: Background & Text Details */}
-            <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+            <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2 sm:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" /> 3. Background & Text Details
               </span>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-0.5">Header Title (Optional)</label>
+                  <label className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 block mb-0.5">Header Title (Optional)</label>
                   <input
                     type="text"
                     value={headerText}
                     onChange={(e) => setHeaderText(e.target.value)}
                     placeholder="e.g. PHOTO BOOTH"
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-blue-500 font-semibold placeholder-zinc-400 dark:placeholder-zinc-600"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 font-semibold placeholder-zinc-400 dark:placeholder-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-0.5">Subtitle Tagline (Optional)</label>
+                  <label className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 block mb-0.5">Subtitle Tagline (Optional)</label>
                   <input
                     type="text"
                     value={subtitleText}
                     onChange={(e) => setSubtitleText(e.target.value)}
                     placeholder="e.g. meow / #memories"
-                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-blue-500 placeholder-zinc-400 dark:placeholder-zinc-600"
+                    className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 placeholder-zinc-400 dark:placeholder-zinc-600"
                   />
                 </div>
               </div>
 
               {/* Color Pickers & Clean Swatches */}
               <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">Color Pickers & Swatches:</span>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1 text-[10px] font-mono text-zinc-600 dark:text-zinc-400 cursor-pointer" title="Header Title & Text Color">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                  <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Color Pickers & Swatches:</span>
+                  <div className="flex items-center gap-2.5">
+                    <label className="flex items-center gap-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-300 cursor-pointer" title="Header Title & Text Color">
                       <span className="text-pink-600 dark:text-pink-400 font-semibold">Title Color:</span>
                       <input
                         type="color"
                         value={textColor}
                         onChange={(e) => setTextColor(e.target.value)}
-                        className="w-4 h-4 rounded border-none cursor-pointer bg-transparent"
+                        className="w-4 h-4 rounded cursor-pointer border-none bg-transparent"
                       />
                     </label>
-                    <label className="flex items-center gap-1 text-[10px] font-mono text-zinc-600 dark:text-zinc-400 cursor-pointer" title="Background Color">
-                      <span>BG:</span>
+                    <label className="flex items-center gap-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-300 cursor-pointer" title="Background Color">
+                      <span className="font-semibold">BG:</span>
                       <input
                         type="color"
                         value={backgroundColor}
                         onChange={(e) => setBackgroundColor(e.target.value)}
-                        className="w-4 h-4 rounded border-none cursor-pointer bg-transparent"
+                        className="w-4 h-4 rounded cursor-pointer border-none bg-transparent"
                       />
                     </label>
-                    <label className="flex items-center gap-1 text-[10px] font-mono text-zinc-600 dark:text-zinc-400 cursor-pointer" title="Border Color">
-                      <span>Border:</span>
+                    <label className="flex items-center gap-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-300 cursor-pointer" title="Border Color">
+                      <span className="font-semibold">Border:</span>
                       <input
                         type="color"
                         value={borderColor}
                         onChange={(e) => setBorderColor(e.target.value)}
-                        className="w-4 h-4 rounded border-none cursor-pointer bg-transparent"
+                        className="w-4 h-4 rounded cursor-pointer border-none bg-transparent"
                       />
                     </label>
                   </div>
@@ -678,7 +708,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                         setBackgroundColor(preset.bg);
                         setBorderColor(preset.border);
                       }}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all text-zinc-700 dark:text-zinc-300"
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all text-zinc-800 dark:text-zinc-200"
                     >
                       <span className="w-2.5 h-2.5 rounded-sm border border-zinc-300 dark:border-zinc-700 shrink-0" style={{ backgroundColor: preset.bg }} />
                       <span>{preset.name}</span>
@@ -690,7 +720,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
               {/* Frame Sizing & Top/Bottom Edge Alignment */}
               <div className="flex flex-col gap-1 pt-1 border-t border-zinc-200 dark:border-zinc-800/80">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">Frame Spacing & Edges:</span>
+                  <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Frame Spacing & Edges:</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -704,9 +734,9 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                         setBorderWidth(0);
                       }
                     }}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all ${
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold border transition-all ${
                       fitExactEdges
-                        ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                         : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
                     }`}
                   >
@@ -716,7 +746,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
 
                 <div className="grid grid-cols-3 gap-2 pt-0.5">
                   <div>
-                    <span className="text-[9px] text-zinc-500 dark:text-zinc-400 block mb-0.5">Photo Spacing:</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block mb-0.5 font-semibold">Photo Spacing:</span>
                     <div className="flex items-center gap-1">
                       {[0, 8, 16, 24].map((pVal) => (
                         <button
@@ -726,9 +756,9 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                             setPadding(pVal);
                             if (pVal === 0) setFitExactEdges(true);
                           }}
-                          className={`flex-1 py-0.5 text-[9px] font-semibold rounded border ${
+                          className={`flex-1 py-0.5 text-[10px] font-semibold rounded border ${
                             padding === pVal
-                              ? 'bg-blue-600/90 text-white border-blue-500'
+                              ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                               : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                           }`}
                         >
@@ -739,16 +769,16 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                   </div>
 
                   <div>
-                    <span className="text-[9px] text-zinc-500 dark:text-zinc-400 block mb-0.5">Frame Thickness:</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block mb-0.5 font-semibold">Frame Thickness:</span>
                     <div className="flex items-center gap-1">
                       {[0, 6, 14, 20].map((bVal) => (
                         <button
                           key={bVal}
                           type="button"
                           onClick={() => setBorderWidth(bVal)}
-                          className={`flex-1 py-0.5 text-[9px] font-semibold rounded border ${
+                          className={`flex-1 py-0.5 text-[10px] font-semibold rounded border ${
                             borderWidth === bVal
-                              ? 'bg-blue-600/90 text-white border-blue-500'
+                              ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                               : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                           }`}
                         >
@@ -759,16 +789,16 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                   </div>
 
                   <div>
-                    <span className="text-[9px] text-zinc-500 dark:text-zinc-400 block mb-0.5">Photo Corner Radius:</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block mb-0.5 font-semibold">Corner Radius:</span>
                     <div className="flex items-center gap-1">
                       {[0, 4, 12, 24].map((rVal) => (
                         <button
                           key={rVal}
                           type="button"
                           onClick={() => setFrameRadius(rVal)}
-                          className={`flex-1 py-0.5 text-[9px] font-semibold rounded border ${
+                          className={`flex-1 py-0.5 text-[10px] font-semibold rounded border ${
                             frameRadius === rVal
-                              ? 'bg-blue-600/90 text-white border-blue-500'
+                              ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                               : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                           }`}
                         >
@@ -782,22 +812,22 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
             </div>
 
             {/* Photo Selection Grid */}
-            <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2 sm:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
                   Select Photos ({selectedIds.length} / {activeLayout.shotCount})
                 </span>
-                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
                   Required: {activeLayout.shotCount} shots
                 </span>
               </div>
 
               {photos.length === 0 ? (
-                <div className="text-xs text-zinc-500 text-center py-4">
+                <div className="text-xs text-zinc-500 text-center py-3">
                   No photos in gallery yet. Take some photos first!
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
                   {photos.map((photo) => {
                     const selectedIndex = selectedIds.indexOf(photo.id);
                     const isSelected = selectedIndex !== -1;
@@ -805,7 +835,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                       <div
                         key={photo.id}
                         onClick={() => toggleSelectPhoto(photo.id)}
-                        className={`relative w-12 h-12 rounded-lg overflow-hidden cursor-pointer border-2 shrink-0 transition-all ${
+                        className={`relative w-11 h-11 sm:w-12 sm:h-12 rounded-lg overflow-hidden cursor-pointer border-2 shrink-0 transition-all ${
                           isSelected
                             ? 'border-blue-500 ring-2 ring-blue-500/40 scale-95'
                             : 'border-transparent opacity-65 hover:opacity-100'
@@ -830,9 +860,9 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
 
             {/* Photo Crop Position & Order Toolbar */}
             {selectedIds.length > 0 && (
-              <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1.5">
+              <div className="bg-zinc-50 dark:bg-zinc-950/90 p-2 sm:p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1 shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                     <Move className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> Frame Position & Order
                   </span>
                   <button
@@ -843,24 +873,24 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-1 max-h-28 overflow-y-auto pr-1 scrollbar-thin">
+                <div className="flex flex-col gap-1 max-h-24 overflow-y-auto pr-1 scrollbar-thin">
                   {selectedIds.map((id, index) => {
                     const currentOffset = imageOffsets[index] || { x: 0.5, y: 0.5 };
                     return (
                       <div
                         key={`${id}_${index}`}
-                        className="flex items-center justify-between gap-1.5 p-1.5 rounded-lg bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-[11px]"
+                        className="flex items-center justify-between gap-1.5 p-1 rounded-lg bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 text-xs"
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
                             {index + 1}
                           </span>
-                          <span className="text-zinc-800 dark:text-zinc-300 font-semibold truncate max-w-[80px]">
+                          <span className="text-zinc-800 dark:text-zinc-200 font-semibold truncate max-w-[80px]">
                             Shot {index + 1}
                           </span>
 
                           {/* Reorder Left/Right */}
-                          <div className="flex items-center gap-0.5 ml-1">
+                          <div className="flex items-center gap-0.5 ml-0.5">
                             <button
                               disabled={index === 0}
                               onClick={() => movePhotoOrder(index, 'left')}
@@ -886,7 +916,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                             onClick={() => setSlotYOffset(index, 0.0)}
                             className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all ${
                               currentOffset.y <= 0.1
-                                ? 'bg-blue-600 text-white border-blue-500'
+                                ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                             }`}
                             title="Position photo to show top (head/face)"
@@ -897,7 +927,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                             onClick={() => setSlotYOffset(index, 0.5)}
                             className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all ${
                               currentOffset.y > 0.4 && currentOffset.y < 0.6
-                                ? 'bg-blue-600 text-white border-blue-500'
+                                ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                             }`}
                             title="Center photo vertically"
@@ -908,7 +938,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                             onClick={() => setSlotYOffset(index, 1.0)}
                             className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-all ${
                               currentOffset.y >= 0.9
-                                ? 'bg-blue-600 text-white border-blue-500'
+                                ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                             }`}
                             title="Position photo to show bottom"
@@ -925,18 +955,31 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
           </div>
 
           {/* Right Column: Clean Interactive Live Strip Preview Card */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-between bg-zinc-50 dark:bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 h-full min-h-[300px] overflow-hidden relative">
-            <div className="flex items-center justify-between w-full mb-1 px-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+          <div className="lg:col-span-5 flex flex-col items-center justify-between bg-zinc-50 dark:bg-zinc-950/90 p-2.5 sm:p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 h-full flex-1 overflow-hidden relative shadow-xs min-h-[200px]">
+            <div className="flex items-center justify-between w-full mb-1 px-0.5 shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
                 Live Strip Preview
               </span>
-              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-                <Move className="w-3 h-3 animate-pulse" /> Drag photo to reposition
-              </span>
+              <div className="flex items-center gap-1.5">
+                {previewBlobUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setIsZoomPreviewOpen(true)}
+                    className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 bg-zinc-200/80 dark:bg-zinc-900 px-2 py-0.5 rounded-full border border-zinc-300 dark:border-zinc-800 transition-all flex items-center gap-1 active:scale-95 shadow-xs"
+                    title="Zoom Full Strip Layout Preview"
+                  >
+                    <Maximize2 className="w-3 h-3 text-blue-500" />
+                    <span>Zoom Preview</span>
+                  </button>
+                )}
+                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                  <Move className="w-3 h-3 animate-pulse" /> Drag to reposition
+                </span>
+              </div>
             </div>
 
             {isPreviewLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-500 my-auto">
+              <div className="flex flex-col items-center justify-center py-8 gap-2 text-zinc-500 my-auto flex-1">
                 <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                 <span className="text-xs font-medium">Assembling Strip...</span>
               </div>
@@ -945,18 +988,18 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
                 ref={previewContainerRef}
                 onMouseDown={handlePreviewMouseDown}
                 onTouchStart={handlePreviewMouseDown}
-                className={`relative w-full h-[270px] flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing select-none rounded-lg p-1.5 bg-zinc-200/50 dark:bg-zinc-900/50 border border-zinc-300 dark:border-zinc-800 transition-all my-auto ${
+                className={`relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing select-none rounded-lg p-2 bg-zinc-200/50 dark:bg-zinc-900/50 border border-zinc-300 dark:border-zinc-800 transition-all my-auto ${
                   isDragging ? 'ring-2 ring-blue-500/60 scale-[0.99]' : ''
                 }`}
               >
                 <img
                   src={previewBlobUrl}
                   alt="Live Photo Strip Preview"
-                  className="max-h-[100%] max-w-[100%] object-contain rounded-lg shadow-xl pointer-events-none"
+                  className="max-h-full max-w-full object-contain rounded-lg shadow-md pointer-events-none"
                 />
               </div>
             ) : (
-              <div className="text-xs text-zinc-500 text-center py-12 my-auto">
+              <div className="text-xs text-zinc-500 text-center py-8 my-auto flex-1 flex items-center justify-center">
                 Select photos to generate live preview
               </div>
             )}
@@ -965,7 +1008,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
 
         {/* Modal Action Buttons */}
         <div className="flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800 pt-2 shrink-0">
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} className="px-4 font-semibold text-xs">
             Cancel
           </Button>
           <Button
@@ -973,6 +1016,7 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
             size="sm"
             onClick={handleCreateStrip}
             disabled={selectedIds.length === 0 || isGenerating}
+            className="px-5 py-1.5 font-bold text-xs shadow-md shadow-blue-500/20"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>{isGenerating ? 'Assembling Strip...' : 'Generate Photo Strip'}</span>
@@ -980,5 +1024,53 @@ export const StripBuilder: React.FC<StripBuilderProps> = ({
         </div>
       </div>
     </Modal>
+
+    {/* Full-Screen Zoomed Photo Strip Layout Preview Modal */}
+    {isZoomPreviewOpen && previewBlobUrl && (
+      <div className="fixed inset-0 z-[100050] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-between p-4 sm:p-6 animate-in fade-in duration-200 select-none">
+        {/* Top Header */}
+        <div className="w-full max-w-4xl flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 text-white font-bold text-sm sm:text-base">
+            <Sparkles className="w-4.5 h-4.5 text-blue-400" />
+            <span>Full Photo Strip Layout Preview</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setIsZoomPreviewOpen(false)} aria-label="Close Zoom Preview">
+            <X className="w-6 h-6 text-zinc-300" />
+          </Button>
+        </div>
+
+        {/* Centered High-Res Strip Image Frame (Matching User Screenshot!) */}
+        <div className="relative flex-1 w-full max-w-4xl flex items-center justify-center p-2 sm:p-4 overflow-hidden my-auto">
+          <div className="w-full h-full max-h-[82vh] bg-zinc-200/50 dark:bg-zinc-900/60 rounded-3xl p-4 sm:p-8 flex items-center justify-center border border-white/10 shadow-2xl">
+            <img
+              src={previewBlobUrl}
+              alt="Full Photo Strip Layout Preview"
+              className="max-h-[76vh] max-w-full object-contain rounded-2xl shadow-2xl transition-transform hover:scale-[1.01]"
+            />
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="w-full max-w-md flex items-center justify-center gap-3 z-10 py-2">
+          <Button variant="ghost" size="md" onClick={() => setIsZoomPreviewOpen(false)} className="text-zinc-300">
+            Back to Customizing
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              setIsZoomPreviewOpen(false);
+              handleCreateStrip();
+            }}
+            disabled={selectedIds.length === 0 || isGenerating}
+            className="flex-1 shadow-lg shadow-blue-500/20 font-semibold"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{isGenerating ? 'Assembling Strip...' : 'Generate Photo Strip'}</span>
+          </Button>
+        </div>
+      </div>
+    )}
+    </>
   );
 };

@@ -54,7 +54,7 @@ export interface PhotoStripConfig {
     | 'red-hearts-pink'
     | 'pastel-floral'
     | 'periwinkle-pet';
-  themePattern?: 'none' | 'hearts' | 'celestial' | 'nature' | 'floral' | 'sparkles' | 'cyber' | 'pirate' | 'korean' | 'cherries' | 'bows' | 'stars' | 'leopard' | 'clouds' | 'checkered';
+  themePattern?: 'none' | 'hearts' | 'celestial' | 'nature' | 'floral' | 'sparkles' | 'cyber' | 'pirate' | 'korean' | 'cherries' | 'bows' | 'stars' | 'leopard' | 'clouds' | 'checkered' | 'butterflies' | 'strawberry' | 'stripes' | 'polka' | 'waves' | 'filmstrip' | 'disco';
   backgroundColor?: string;
   borderColor?: string;
   textColor?: string;

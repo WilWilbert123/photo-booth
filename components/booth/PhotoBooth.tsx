@@ -64,6 +64,8 @@ export const PhotoBooth: React.FC = () => {
     toggleLivePhoto,
     mode,
     setMode,
+    isRecording,
+    recordingSeconds,
     countdownDuration,
     setCountdownDuration,
     setActiveTab,
@@ -91,10 +93,17 @@ export const PhotoBooth: React.FC = () => {
     triggerCaptureSequence();
   };
 
+  const [modeToastText, setModeToastText] = useState<string | null>(null);
+
   const cycleMode = () => {
-    const modes: BoothMode[] = ['PHOTO', 'POLAROID', '4-SHOT', 'PHOTO_STRIP', 'BOOMERANG', 'GIF'];
+    const modes: BoothMode[] = ['PHOTO', 'VIDEO', 'POLAROID', '4-SHOT', 'PHOTO_STRIP', 'BOOMERANG', 'GIF'];
     const currentIndex = modes.indexOf(mode);
-    setMode(modes[(currentIndex + 1) % modes.length]);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    setMode(nextMode);
+
+    const formatted = nextMode.replace('_', ' ');
+    setModeToastText(`Mode: ${formatted}`);
+    setTimeout(() => setModeToastText(null), 1800);
   };
 
   const cycleCountdown = () => {
@@ -117,11 +126,32 @@ export const PhotoBooth: React.FC = () => {
             onCanvasRefAvailable={handleCanvasAvailable}
           />
 
+          {/* Live Video Recording Timer Badge */}
+          {isRecording && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-600/90 text-white font-extrabold text-xs tracking-wider uppercase shadow-xl animate-pulse backdrop-blur-md">
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+              <span>REC {String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
+            </div>
+          )}
+
           {/* iOS Live Photo Active Yellow Badge */}
-          {isLivePhotoEnabled && (
+          {isLivePhotoEnabled && !isRecording && (
             <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/90 text-zinc-950 font-extrabold text-[11px] tracking-wider uppercase shadow-md backdrop-blur-md">
               <span className="w-2 h-2 rounded-full bg-zinc-950 animate-ping" />
               LIVE PHOTO
+            </div>
+          )}
+
+          {/* Active Booth Mode Badge */}
+          <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900/80 text-white font-extrabold text-[11px] tracking-wider uppercase border border-white/15 shadow-md backdrop-blur-md">
+            <LayoutTemplate className="w-3.5 h-3.5 text-blue-400" />
+            <span>{mode.replace('_', ' ')}</span>
+          </div>
+
+          {/* Animated Mode Toast Notification Banner */}
+          {modeToastText && (
+            <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-blue-600/95 text-white font-bold text-xs shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+              {modeToastText}
             </div>
           )}
 
@@ -130,7 +160,7 @@ export const PhotoBooth: React.FC = () => {
             {/* iOS Live Photo Toggle Button */}
             <button 
               onClick={toggleLivePhoto}
-              className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center border transition-all group relative ${
+              className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center border transition-all active:scale-90 group relative ${
                 isLivePhotoEnabled 
                   ? 'bg-amber-400 text-zinc-950 border-amber-300 font-bold shadow-lg shadow-amber-500/20' 
                   : 'bg-zinc-900/50 text-white border-white/20 hover:bg-zinc-900/70'
@@ -142,13 +172,15 @@ export const PhotoBooth: React.FC = () => {
               </div>
             </button>
 
+            {/* Mode Switcher Button */}
             <button 
               onClick={cycleMode}
-              className="w-10 h-10 rounded-full bg-zinc-900/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-zinc-900/70 transition-colors group relative"
+              className="w-10 h-10 rounded-full bg-zinc-900/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-zinc-900/70 active:scale-90 transition-all group relative shadow-md"
+              title={`Current Mode: ${mode.replace('_', ' ')}`}
             >
-              <LayoutTemplate className="w-4 h-4" />
+              <LayoutTemplate className="w-4 h-4 text-blue-400" />
               <div className="hidden sm:block absolute left-full ml-3 px-2 py-1 bg-zinc-900/90 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Mode: {mode}
+                Mode: {mode.replace('_', ' ')}
               </div>
             </button>
             <button 

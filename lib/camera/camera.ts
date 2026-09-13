@@ -10,7 +10,9 @@ export async function requestCameraStream(
     throw new Error('Camera access is not supported in this environment.');
   }
 
-  const constraints = getConstraintsForResolution(resolution, facingMode, deviceId);
+  const isMobile = typeof window !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const targetRes = (isMobile && resolution === '1080p') ? 'auto' : resolution;
+  const constraints = getConstraintsForResolution(targetRes, facingMode, deviceId);
 
   try {
     return await navigator.mediaDevices.getUserMedia(constraints);

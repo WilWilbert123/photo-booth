@@ -57,7 +57,7 @@ export const LAYOUT_FORMAT_OPTIONS: LayoutFormatOption[] = [
 ];
 
 export interface ThemePatternOption {
-  id: 'none' | 'hearts' | 'celestial' | 'nature' | 'floral' | 'sparkles' | 'cyber' | 'pirate' | 'korean' | 'cherries' | 'bows' | 'stars' | 'leopard' | 'clouds' | 'checkered';
+  id: 'none' | 'hearts' | 'celestial' | 'nature' | 'floral' | 'sparkles' | 'cyber' | 'pirate' | 'korean' | 'cherries' | 'bows' | 'stars' | 'leopard' | 'clouds' | 'checkered' | 'butterflies' | 'strawberry' | 'stripes' | 'polka' | 'waves' | 'filmstrip' | 'disco';
   name: string;
   icon: string;
   defaultBg: string;
@@ -70,15 +70,22 @@ export const THEME_PATTERN_OPTIONS: ThemePatternOption[] = [
   { id: 'none', name: 'Clean Minimal', icon: 'ban', defaultBg: '#FFFFFF', defaultBorder: '#18181B', defaultText: '#18181B', defaultAccent: '#52525B' },
   { id: 'hearts', name: 'Red Hearts', icon: 'heart', defaultBg: '#0F0F12', defaultBorder: '#EF4444', defaultText: '#FFFFFF', defaultAccent: '#EF4444' },
   { id: 'cherries', name: 'Sweet Cherries', icon: 'cherry', defaultBg: '#FFF1F2', defaultBorder: '#E11D48', defaultText: '#881337', defaultAccent: '#F43F5E' },
+  { id: 'strawberry', name: 'Berry Sweet', icon: 'cherry', defaultBg: '#FFF1F2', defaultBorder: '#DC2626', defaultText: '#991B1B', defaultAccent: '#EF4444' },
   { id: 'bows', name: 'Coquette Bows', icon: 'ribbon', defaultBg: '#FCE7F3', defaultBorder: '#EC4899', defaultText: '#831843', defaultAccent: '#F472B6' },
+  { id: 'butterflies', name: 'Soft Butterflies', icon: 'sparkles', defaultBg: '#F5F3FF', defaultBorder: '#8B5CF6', defaultText: '#4C1D95', defaultAccent: '#A78BFA' },
   { id: 'stars', name: 'Y2K Stars', icon: 'star', defaultBg: '#0F172A', defaultBorder: '#F59E0B', defaultText: '#FEF3C7', defaultAccent: '#FBBF24' },
   { id: 'leopard', name: 'Wild Leopard', icon: 'paw-print', defaultBg: '#FEF3C7', defaultBorder: '#78350F', defaultText: '#451A03', defaultAccent: '#D97706' },
   { id: 'clouds', name: 'Dreamy Clouds', icon: 'cloud', defaultBg: '#E0F2FE', defaultBorder: '#0284C7', defaultText: '#075985', defaultAccent: '#38BDF8' },
+  { id: 'waves', name: 'Ocean Waves', icon: 'cloud', defaultBg: '#F0FDFA', defaultBorder: '#0D9488', defaultText: '#134E4A', defaultAccent: '#2DD4BF' },
   { id: 'checkered', name: 'Retro Checkered', icon: 'grid-3x3', defaultBg: '#18181B', defaultBorder: '#FAFAFA', defaultText: '#FFFFFF', defaultAccent: '#E4E4E7' },
+  { id: 'stripes', name: 'Candy Stripes', icon: 'grid-3x3', defaultBg: '#FDF2F8', defaultBorder: '#F472B6', defaultText: '#831843', defaultAccent: '#FB7185' },
+  { id: 'polka', name: 'Retro Polka', icon: 'sparkles', defaultBg: '#FEF2F2', defaultBorder: '#EF4444', defaultText: '#991B1B', defaultAccent: '#F87171' },
   { id: 'celestial', name: 'Moon & Stars', icon: 'moon', defaultBg: '#0B0F19', defaultBorder: '#38BDF8', defaultText: '#F0F9FF', defaultAccent: '#38BDF8' },
   { id: 'nature', name: 'Sun & Trees', icon: 'sun', defaultBg: '#064E3B', defaultBorder: '#34D399', defaultText: '#ECFDF5', defaultAccent: '#34D399' },
   { id: 'floral', name: 'Floral Garden', icon: 'flower', defaultBg: '#A5B4FC', defaultBorder: '#6366F1', defaultText: '#FFFFFF', defaultAccent: '#F43F5E' },
   { id: 'sparkles', name: 'Magic Sparkles', icon: 'sparkles', defaultBg: '#F3E8FF', defaultBorder: '#A855F7', defaultText: '#4C1D95', defaultAccent: '#A855F7' },
+  { id: 'disco', name: 'Y2K Disco', icon: 'star', defaultBg: '#312E81', defaultBorder: '#818CF8', defaultText: '#EEF2FF', defaultAccent: '#A5B4FC' },
+  { id: 'filmstrip', name: 'Film Sprockets', icon: 'film', defaultBg: '#18181B', defaultBorder: '#E4E4E7', defaultText: '#FFFFFF', defaultAccent: '#A1A1AA' },
   { id: 'cyber', name: 'Cyber Terminal', icon: 'terminal', defaultBg: '#0D1117', defaultBorder: '#00FF66', defaultText: '#00FF66', defaultAccent: '#22C55E' },
   { id: 'pirate', name: 'Pirate Wanted', icon: 'skull', defaultBg: '#EED9B3', defaultBorder: '#3D2008', defaultText: '#2E1503', defaultAccent: '#854D0E' },
   { id: 'korean', name: 'Korean Studio', icon: 'camera', defaultBg: '#EEF2FF', defaultBorder: '#312E81', defaultText: '#1E1B4B', defaultAccent: '#6366F1' },

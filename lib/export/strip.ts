@@ -591,6 +591,20 @@ function renderPatternBackground(
     drawCloudsPattern(ctx, x, y, w, h);
   } else if (pattern === 'checkered') {
     drawCheckeredPattern(ctx, x, y, w, h);
+  } else if (pattern === 'butterflies') {
+    drawButterfliesPattern(ctx, x, y, w, h);
+  } else if (pattern === 'strawberry') {
+    drawStrawberryPattern(ctx, x, y, w, h);
+  } else if (pattern === 'stripes') {
+    drawStripesPattern(ctx, x, y, w, h);
+  } else if (pattern === 'polka') {
+    drawPolkaPattern(ctx, x, y, w, h);
+  } else if (pattern === 'waves') {
+    drawWavesPattern(ctx, x, y, w, h);
+  } else if (pattern === 'filmstrip') {
+    drawFilmstripPattern(ctx, x, y, w, h);
+  } else if (pattern === 'disco') {
+    drawDiscoPattern(ctx, x, y, w, h);
   }
 }
 
@@ -1006,6 +1020,207 @@ function drawCheckeredPattern(ctx: CanvasRenderingContext2D, x: number, y: numbe
       if ((rowIdx + colIdx) % 2 === 0) {
         ctx.fillRect(px, py, tileSize, tileSize);
       }
+    }
+  }
+  ctx.restore();
+}
+
+function drawButterfliesPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 110;
+  const stepY = 110;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 55;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      // Butterfly wings
+      ctx.fillStyle = '#8B5CF6';
+      ctx.beginPath();
+      ctx.ellipse(cx - 8, cy - 6, 9, 6, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 8, cy - 6, 9, 6, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#C084FC';
+      ctx.beginPath();
+      ctx.ellipse(cx - 6, cy + 4, 6, 4, Math.PI / 4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 6, cy + 4, 6, 4, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Body & Antennae
+      ctx.fillStyle = '#4C1D95';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 2, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#4C1D95';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 7);
+      ctx.quadraticCurveTo(cx - 3, cy - 12, cx - 5, cy - 12);
+      ctx.moveTo(cx, cy - 7);
+      ctx.quadraticCurveTo(cx + 3, cy - 12, cx + 5, cy - 12);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawStrawberryPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 100;
+  const stepY = 100;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 50;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      // Strawberry body
+      ctx.fillStyle = '#DC2626';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 12);
+      ctx.quadraticCurveTo(cx - 12, cy + 2, cx - 10, cy - 4);
+      ctx.quadraticCurveTo(cx - 6, cy - 12, cx, cy - 8);
+      ctx.quadraticCurveTo(cx + 6, cy - 12, cx + 10, cy - 4);
+      ctx.quadraticCurveTo(cx + 12, cy + 2, cx, cy + 12);
+      ctx.fill();
+
+      // Green Leaf crown
+      ctx.fillStyle = '#16A34A';
+      ctx.beginPath();
+      ctx.ellipse(cx - 5, cy - 9, 5, 2.5, -Math.PI / 6, 0, Math.PI * 2);
+      ctx.ellipse(cx + 5, cy - 9, 5, 2.5, Math.PI / 6, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy - 10, 4, 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Seeds
+      ctx.fillStyle = '#FEF08A';
+      ctx.beginPath();
+      ctx.arc(cx - 4, cy - 2, 1, 0, Math.PI * 2);
+      ctx.arc(cx + 4, cy - 2, 1, 0, Math.PI * 2);
+      ctx.arc(cx, cy + 3, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawStripesPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.22)';
+  ctx.lineWidth = 14;
+
+  const spacing = 32;
+  for (let i = -h; i < w + h; i += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x + i, y);
+    ctx.lineTo(x + i + h, y + h);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPolkaPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = '#EF4444';
+  const stepX = 50;
+  const stepY = 50;
+
+  for (let py = y - 10; py < y + h + 30; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 25;
+    for (let px = x - 10; px < x + w + 30; px += stepX) {
+      ctx.beginPath();
+      ctx.arc(px + rowOffset, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawWavesPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.strokeStyle = 'rgba(13, 148, 136, 0.4)';
+  ctx.lineWidth = 2.5;
+
+  const stepY = 45;
+  for (let py = y - 10; py < y + h + 30; py += stepY) {
+    ctx.beginPath();
+    for (let px = x; px <= x + w; px += 20) {
+      const cy = py + Math.sin((px - x) / 20) * 8;
+      if (px === x) ctx.moveTo(px, cy);
+      else ctx.lineTo(px, cy);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFilmstripPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  const holeW = 8;
+  const holeH = 12;
+  const gap = 20;
+
+  // Left & right film perforations
+  for (let py = y + 10; py < y + h - 10; py += gap) {
+    ctx.fillRect(x + 6, py, holeW, holeH);
+    ctx.fillRect(x + w - 14, py, holeW, holeH);
+  }
+  ctx.restore();
+}
+
+function drawDiscoPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 90;
+  const stepY = 90;
+
+  for (let py = y - 20; py < y + h + 50; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 45;
+    for (let px = x - 20; px < x + w + 50; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      ctx.fillStyle = '#818CF8';
+      drawSparkle(ctx, cx, cy, 14);
+
+      ctx.fillStyle = '#C7D2FE';
+      ctx.fillRect(cx - 4, cy - 4, 8, 8);
+
+      ctx.fillStyle = '#FFFFFF';
+      drawSparkle(ctx, cx + 20, cy + 20, 6);
     }
   }
   ctx.restore();

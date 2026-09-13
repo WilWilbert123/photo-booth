@@ -157,39 +157,45 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
       </div>
 
       {/* Bottom Action Toolbar */}
-      <div className="w-full max-w-lg flex items-center justify-center gap-2 sm:gap-3 z-10 py-2">
+      <div className="w-full max-w-md flex items-center justify-center gap-1.5 sm:gap-3 z-10 py-2 px-2">
         <Button 
           variant="primary" 
-          size="md" 
+          size="sm" 
           onClick={handleDownload} 
-          className="flex-1 whitespace-nowrap rounded-xl shadow-md text-xs sm:text-sm font-semibold py-2.5"
+          className="flex-1 whitespace-nowrap rounded-xl shadow-md text-xs sm:text-sm font-semibold px-2.5 sm:px-4 py-2 sm:py-2.5"
         >
-          <Download className="w-4 h-4" />
-          <span>Download {isLivePhoto ? 'Photo' : 'Image'}</span>
+          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span>
+            <span className="hidden sm:inline">Download </span>
+            {isLivePhoto ? 'Photo' : 'Image'}
+          </span>
         </Button>
 
         {isLivePhoto && (
           <Button 
             variant="outline" 
-            size="md" 
+            size="sm" 
             onClick={handleDownloadLiveVideo} 
-            className="flex-1 whitespace-nowrap text-amber-400 border-amber-500/30 hover:bg-amber-500/10 rounded-xl text-xs sm:text-sm font-semibold py-2.5"
+            className="flex-1 whitespace-nowrap text-amber-400 border-amber-500/30 hover:bg-amber-500/10 rounded-xl text-xs sm:text-sm font-semibold px-2.5 sm:px-4 py-2 sm:py-2.5"
           >
-            <Film className="w-4 h-4 text-amber-400" />
-            <span>Live Motion</span>
+            <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+            <span>
+              <span className="hidden sm:inline">Live </span>
+              Motion
+            </span>
           </Button>
         )}
 
         <Button
           variant="danger"
-          size="md"
+          size="sm"
           onClick={() => {
             onDelete(item.id);
             onClose();
           }}
-          className="whitespace-nowrap rounded-xl text-xs sm:text-sm font-semibold px-4 py-2.5"
+          className="whitespace-nowrap rounded-xl text-xs sm:text-sm font-semibold px-2.5 sm:px-4 py-2 sm:py-2.5 shrink-0"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
           <span>Delete</span>
         </Button>
       </div>
