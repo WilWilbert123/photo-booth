@@ -22,7 +22,7 @@ import {
   Database,
   Download,
   Smartphone,
-  CheckCircle2
+  CheckCircle
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -149,7 +149,7 @@ export default function SettingsPage() {
 
               {isStandalone ? (
                 <span className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                  <CheckCircle2 className="w-4 h-4" /> Installed
+                  <CheckCircle className="w-4 h-4" /> Installed
                 </span>
               ) : (
                 <button

@@ -23,6 +23,10 @@ interface BoothActions {
   setStorageLocation: (location: string) => void;
   setMaxStorageSize: (size: string) => void;
   setSelectedStripLayout: (layoutId: string) => void;
+  replaceSequenceBlob: (index: number, blob: Blob) => void;
+  setShowSequenceReviewModal: (show: boolean) => void;
+  setRetakeIndex: (index: number | null) => void;
+  setSequenceShotStatusText: (text: string | null) => void;
 }
 
 export const useBoothStore = create<BoothState & BoothActions>((set) => ({
@@ -36,6 +40,9 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   sequenceTotalShots: 4,
   sequenceCurrentShot: 0,
   sequenceCapturedBlobs: [],
+  showSequenceReviewModal: false,
+  retakeIndex: null,
+  sequenceShotStatusText: null,
   isFlashEnabled: true,
   isSoundEnabled: true,
   isPoseGuideEnabled: false,
@@ -49,6 +56,16 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   selectedStripLayout: 'family',
 
   setSelectedStripLayout: (selectedStripLayout) => set({ selectedStripLayout }),
+  setShowSequenceReviewModal: (showSequenceReviewModal) => set({ showSequenceReviewModal }),
+  setRetakeIndex: (retakeIndex) => set({ retakeIndex }),
+  setSequenceShotStatusText: (sequenceShotStatusText) => set({ sequenceShotStatusText }),
+
+  replaceSequenceBlob: (index, blob) =>
+    set((state) => {
+      const nextBlobs = [...state.sequenceCapturedBlobs];
+      nextBlobs[index] = blob;
+      return { sequenceCapturedBlobs: nextBlobs };
+    }),
 
   setMode: (mode) => set({ mode }),
   setCountdownDuration: (countdownDuration) => set({ countdownDuration }),
@@ -57,13 +74,13 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   setIsCapturing: (isCapturing) => set({ isCapturing }),
   setIsRecording: (isRecording) => set({ isRecording }),
   setRecordingSeconds: (recordingSeconds) => set({ recordingSeconds }),
-  startSequence: (sequenceTotalShots) => set({ sequenceTotalShots, sequenceCurrentShot: 0, sequenceCapturedBlobs: [] }),
+  startSequence: (sequenceTotalShots) => set({ sequenceTotalShots, sequenceCurrentShot: 0, sequenceCapturedBlobs: [], showSequenceReviewModal: false }),
   addSequenceBlob: (blob) =>
     set((state) => ({
       sequenceCapturedBlobs: [...state.sequenceCapturedBlobs, blob],
       sequenceCurrentShot: state.sequenceCurrentShot + 1,
     })),
-  clearSequence: () => set({ sequenceCapturedBlobs: [], sequenceCurrentShot: 0 }),
+  clearSequence: () => set({ sequenceCapturedBlobs: [], sequenceCurrentShot: 0, showSequenceReviewModal: false, retakeIndex: null, sequenceShotStatusText: null }),
   toggleFlash: () => set((state) => ({ isFlashEnabled: !state.isFlashEnabled })),
   toggleSound: () => set((state) => ({ isSoundEnabled: !state.isSoundEnabled })),
   togglePoseGuide: () => set((state) => ({ isPoseGuideEnabled: !state.isPoseGuideEnabled })),

@@ -50,6 +50,7 @@ export const IntroSplash: React.FC = () => {
             src="/logo.png"
             alt="PhotoBooth Studio Logo"
             fill
+            sizes="(max-width: 768px) 192px, 200px"
             className="object-contain"
             priority
           />

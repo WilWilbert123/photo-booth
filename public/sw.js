@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photo-booth-v1';
+const CACHE_NAME = 'photo-booth-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/booth',
@@ -32,13 +32,18 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Bypass service worker cache for dev server Next.js dynamic chunks & localhost
+  if (url.pathname.startsWith('/_next/') || url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch background update
         fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
