@@ -8,10 +8,12 @@ import { Button } from '../ui/Button';
 
 interface CameraPreviewProps {
   onVideoRefAvailable?: (video: HTMLVideoElement) => void;
+  onCanvasRefAvailable?: (canvas: HTMLCanvasElement) => void;
 }
 
 export const CameraPreview: React.FC<CameraPreviewProps> = ({
   onVideoRefAvailable,
+  onCanvasRefAvailable,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -27,6 +29,12 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
       }
     }
   }, [stream, onVideoRefAvailable]);
+
+  useEffect(() => {
+    if (canvasRef.current && onCanvasRefAvailable) {
+      onCanvasRefAvailable(canvasRef.current);
+    }
+  }, [onCanvasRefAvailable]);
 
   if (permissionState === 'denied' || error) {
     return (

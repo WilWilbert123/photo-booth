@@ -8,6 +8,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
+  contentPadding?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -16,6 +17,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   maxWidth = 'md',
+  contentPadding = 'p-6',
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -46,20 +48,20 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className={`w-full ${widthClasses[maxWidth]} bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col`}
+        className={`w-full ${widthClasses[maxWidth]} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-zinc-900 dark:text-zinc-100`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80">
-            <h3 className="text-lg font-semibold text-zinc-100">{title}</h3>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50/50 dark:bg-zinc-900/50">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
             <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dialog">
-              <X className="w-5 h-5 text-zinc-400" />
+              <X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
             </Button>
           </div>
         )}
-        <div className="p-6 overflow-y-auto max-h-[85vh]">{children}</div>
+        <div className={`${contentPadding} overflow-y-auto max-h-[85vh]`}>{children}</div>
       </div>
     </div>
   );

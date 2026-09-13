@@ -15,7 +15,17 @@ export const MobileNav: React.FC = () => {
   const { theme, setTheme, activeTab, setActiveTab } = useBoothStore();
   const lastNavTime = useRef<number>(0);
 
-  const { canInstall, isIOS, showIOSModal, setShowIOSModal, triggerInstall } = useInstallPWA();
+  const { 
+    canInstall, 
+    isIOS, 
+    isMac, 
+    isAndroid, 
+    showInstallModal, 
+    setShowInstallModal, 
+    isInstalling, 
+    hasNativePrompt,
+    triggerInstall 
+  } = useInstallPWA();
 
   useEffect(() => {
     if (pathname?.includes('/gallery')) setActiveTab('gallery');
@@ -65,10 +75,19 @@ export const MobileNav: React.FC = () => {
           {canInstall && (
             <button
               onClick={triggerInstall}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
+              disabled={isInstalling}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-sm transition-all active:scale-95 ${
+                isInstalling ? 'bg-blue-400 cursor-wait animate-pulse' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              {isIOS ? <Smartphone className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
-              <span>{isIOS ? 'Add to Home' : 'Install App'}</span>
+              {isInstalling ? (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : isIOS ? (
+                <Smartphone className="w-3.5 h-3.5" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{isInstalling ? 'Installing...' : isIOS ? 'Add to Home' : 'Install App'}</span>
             </button>
           )}
 
@@ -114,11 +133,15 @@ export const MobileNav: React.FC = () => {
         })}
       </nav>
 
-      {/* iOS Add to Home Screen Guidance Modal */}
+      {/* Universal Install Guidance Modal */}
       <InstallPromptModal
-        isOpen={showIOSModal}
-        onClose={() => setShowIOSModal(false)}
-        isIOS={true}
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+        isIOS={isIOS}
+        isMac={isMac}
+        isAndroid={isAndroid}
+        hasNativePrompt={hasNativePrompt}
+        onInstallClick={triggerInstall}
       />
     </>
   );

@@ -33,21 +33,46 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
 
     setImgUrl(url || null);
 
+    let videoUrl = '';
+    const photoRec = item as PhotoRecord;
+    if (photoRec.isLivePhoto && photoRec.liveVideoBlob) {
+      videoUrl = URL.createObjectURL(photoRec.liveVideoBlob);
+      setLiveVideoUrl(videoUrl);
+    }
+
     return () => {
       if (url) URL.revokeObjectURL(url);
+      if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [item]);
+
+  const [liveVideoUrl, setLiveVideoUrl] = useState<string | null>(null);
+  const [isPlayingLive, setIsPlayingLive] = useState(false);
 
   const isVideoOrAnimated = 'duration' in item || (item as PhotoRecord).type === 'boomerang' || (item as PhotoRecord).type === 'gif';
   const isStrip = !isVideoOrAnimated && (item as PhotoRecord).type === 'strip';
   const isGif = (item as PhotoRecord).type === 'gif' || (item as PhotoRecord).type === 'boomerang';
+  const isLive = (item as PhotoRecord).isLivePhoto && Boolean(liveVideoUrl);
 
   return (
     <div
       onClick={() => onSelect(item)}
+      onMouseEnter={() => isLive && setIsPlayingLive(true)}
+      onMouseLeave={() => isLive && setIsPlayingLive(false)}
+      onTouchStart={() => isLive && setIsPlayingLive(true)}
+      onTouchEnd={() => isLive && setIsPlayingLive(false)}
       className="group relative rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800/80 shadow-lg aspect-square cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:border-zinc-700 select-none"
     >
-      {imgUrl ? (
+      {isPlayingLive && liveVideoUrl ? (
+        <video
+          src={liveVideoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover animate-in fade-in duration-200"
+        />
+      ) : imgUrl ? (
         <img
           src={imgUrl}
           alt="Saved memory"
@@ -63,7 +88,12 @@ export const GalleryItem: React.FC<GalleryItemProps> = ({
       {/* Type badge */}
       <div className="absolute top-3 left-3 z-10">
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-black/60 backdrop-blur-md text-white border border-white/10">
-          {isVideoOrAnimated ? (
+          {isLive ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span className="text-amber-300">LIVE</span>
+            </>
+          ) : isVideoOrAnimated ? (
             <>
               <Film className="w-3 h-3 text-blue-400" />
               <span>Video</span>

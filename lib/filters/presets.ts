@@ -373,11 +373,112 @@ export const FILTER_PRESETS: Record<string, FilterPreset> = {
     uniforms: { u_saturation: 0.08, u_contrast: 1.5, u_brightness: -0.12, u_temperature: -0.2, u_shadows: -0.2, u_vignette: 0.4 },
     thumbnailTint: '#1a2233',
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  USER EXACT REQUESTED 15 FILTERS
+  // ═══════════════════════════════════════════════════════════════════════════
+  grayscale: {
+    id: 'grayscale', displayName: 'Grayscale', category: 'monochrome',
+    cssFilter: 'grayscale(1) contrast(1.0) brightness(1.0)',
+    uniforms: { u_saturation: 0, u_contrast: 1.0, u_brightness: 0 },
+    thumbnailTint: '#777777',
+  },
+  smooth: {
+    id: 'smooth', displayName: 'Smooth', category: 'beauty',
+    cssFilter: 'brightness(1.08) contrast(0.92) saturate(1.1)',
+    uniforms: { u_brightness: 0.08, u_contrast: 0.92, u_saturation: 1.1, u_bloom: 0.2 },
+    thumbnailTint: '#f4c2c2',
+  },
+  bw: {
+    id: 'bw', displayName: 'B&W', category: 'monochrome',
+    cssFilter: 'grayscale(1) contrast(1.45) brightness(0.95)',
+    uniforms: { u_saturation: 0, u_contrast: 1.45, u_brightness: -0.05 },
+    thumbnailTint: '#222222',
+  },
+  sepia: {
+    id: 'sepia', displayName: 'Sepia', category: 'vintage',
+    cssFilter: 'sepia(0.85) contrast(1.1) brightness(0.95) saturate(1.2)',
+    uniforms: { u_sepia: 0.85, u_contrast: 1.1, u_brightness: -0.05, u_saturation: 1.2 },
+    thumbnailTint: '#704214',
+  },
+  bittersweet: {
+    id: 'bittersweet', displayName: 'Bittersweet', category: 'moody',
+    cssFilter: 'contrast(1.15) saturate(0.85) sepia(0.18) brightness(1.02) hue-rotate(-10deg)',
+    uniforms: { u_contrast: 1.15, u_saturation: 0.85, u_sepia: 0.18, u_temperature: -0.1 },
+    thumbnailTint: '#a06060',
+  },
+  'og-vintage': {
+    id: 'og-vintage', displayName: 'OG Vintage', category: 'vintage',
+    cssFilter: 'sepia(0.55) contrast(1.25) brightness(0.9) saturate(1.3) hue-rotate(-15deg)',
+    uniforms: { u_sepia: 0.55, u_contrast: 1.25, u_brightness: -0.1, u_saturation: 1.3 },
+    thumbnailTint: '#d48030',
+  },
+  fresh: {
+    id: 'fresh', displayName: 'Fresh', category: 'everyday',
+    cssFilter: 'brightness(1.1) contrast(1.05) saturate(1.35) hue-rotate(5deg)',
+    uniforms: { u_brightness: 0.1, u_contrast: 1.05, u_saturation: 1.35, u_temperature: -0.05 },
+    thumbnailTint: '#40c4aa',
+  },
+  citrus: {
+    id: 'citrus', displayName: 'Citrus', category: 'everyday',
+    cssFilter: 'contrast(1.12) saturate(1.45) brightness(1.05) hue-rotate(-12deg) sepia(0.12)',
+    uniforms: { u_contrast: 1.12, u_saturation: 1.45, u_brightness: 0.05, u_temperature: 0.2 },
+    thumbnailTint: '#f59e0b',
+  },
+  '2015': {
+    id: '2015', displayName: '2015', category: 'vintage',
+    cssFilter: 'contrast(1.28) saturate(1.22) sepia(0.22) brightness(1.02) hue-rotate(-5deg)',
+    uniforms: { u_contrast: 1.28, u_saturation: 1.22, u_sepia: 0.22, u_vignette: 0.35 },
+    thumbnailTint: '#8b5cf6',
+  },
+  focus: {
+    id: 'focus', displayName: 'Focus', category: 'lens',
+    cssFilter: 'contrast(1.25) brightness(1.04) saturate(1.15)',
+    uniforms: { u_contrast: 1.25, u_brightness: 0.04, u_saturation: 1.15, u_vignette: 0.5 },
+    thumbnailTint: '#3b82f6',
+  },
+  candy: {
+    id: 'candy', displayName: 'Candy', category: 'everyday',
+    cssFilter: 'contrast(1.12) saturate(1.45) brightness(1.08) hue-rotate(-18deg) sepia(0.08)',
+    uniforms: { u_contrast: 1.12, u_saturation: 1.45, u_brightness: 0.08, u_tint: 0.25 },
+    thumbnailTint: '#ec4899',
+  },
+  '80s': {
+    id: '80s', displayName: '80s', category: 'vintage',
+    cssFilter: 'contrast(1.3) saturate(1.5) hue-rotate(330deg) brightness(1.05)',
+    uniforms: { u_contrast: 1.3, u_saturation: 1.5, u_hue: 330 },
+    thumbnailTint: '#d946ef',
+  },
+  nostalgia: {
+    id: 'nostalgia', displayName: 'Nostalgia', category: 'vintage',
+    cssFilter: 'sepia(0.28) contrast(0.95) brightness(1.08) saturate(1.18) hue-rotate(-5deg)',
+    uniforms: { u_sepia: 0.28, u_contrast: 0.95, u_brightness: 0.08, u_temperature: 0.15 },
+    thumbnailTint: '#fbbf24',
+  },
 };
+
+/** Exact 15 user requested filters */
+export const EXACT_USER_FILTERS: string[] = [
+  'vintage',
+  'grayscale',
+  'smooth',
+  'bw',
+  'sepia',
+  'normal',
+  'bittersweet',
+  'og-vintage',
+  'fresh',
+  'citrus',
+  '2015',
+  'focus',
+  'candy',
+  '80s',
+  'nostalgia',
+];
 
 /** Ordered list for UI display */
 export const FILTER_PRESET_ORDER: string[] = [
-  'normal',
+  ...EXACT_USER_FILTERS,
   // Everyday
   'clarendon', 'juno', 'lark', 'ludwig', 'perpetua', 'cinema',
   'simple-standard', 'simple-warm', 'simple-cool',
@@ -387,7 +488,7 @@ export const FILTER_PRESET_ORDER: string[] = [
   // Vintage
   'gingham', 'reyes', 'slumber', 'nashville', '1977', 'kelvin',
   'earlybird', 'brannan', 'sutro', 'toaster', 'walden', 'poprocket',
-  'vintage', 'film', 'fade-standard', 'fade-warm', 'fade-cool',
+  'film', 'fade-standard', 'fade-warm', 'fade-cool',
   // Moody
   'lofi', 'x-pro-ii', 'amaro', 'hudson', 'crema', 'moody', 'emerald',
   // Mono

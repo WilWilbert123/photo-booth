@@ -37,7 +37,7 @@ export async function createPhotoStripBlob(
 
   const backgroundColor = config.backgroundColor || preset.backgroundColor;
   const borderColor = config.borderColor || preset.borderColor;
-  const textColor = preset.textColor;
+  const textColor = config.textColor || config.headerColor || preset.textColor;
   const accentColor = preset.accentColor;
   const headerText = config.headerText ?? preset.defaultHeader;
   const subtitleText = config.subtitleText ?? preset.defaultSubtitle;
@@ -64,13 +64,20 @@ export async function createPhotoStripBlob(
   const photoH = Math.round(photoW / aspectRatio);
   const padding = config.padding ?? 20;
   const borderWidth = config.borderWidth ?? 18;
+  const frameRadius = config.frameRadius ?? preset.frameRadius ?? 4;
 
-  if (config.layout === 'grid-2x2') {
-    // 2x2 Grid Layout
-    const innerW = photoW * 2 + padding;
+  const imageOffsets = config.imageOffsets || [];
+
+  if (config.layout === 'grid-2x2' || config.layout === 'grid-2x3') {
+    // 2x2 or 2x3 Grid Layout (6-shot grid like user reference photo)
+    const rows = config.layout === 'grid-2x3' ? 3 : 2;
+    const cols = 2;
+    const totalShots = rows * cols;
+
+    const innerW = photoW * cols + padding * (cols - 1);
     const headerH = 100;
     const footerH = 75;
-    const innerH = headerH + photoH * 2 + padding + footerH;
+    const innerH = headerH + photoH * rows + padding * (rows - 1) + footerH;
 
     const canvasW = innerW + padding * 2 + borderWidth * 2;
     const canvasH = innerH + padding * 2 + borderWidth * 2;
@@ -90,6 +97,9 @@ export async function createPhotoStripBlob(
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(cardX, cardY, cardW, cardH);
 
+    const activePattern = config.themePattern || preset.pattern || 'none';
+    renderPatternBackground(ctx, activePattern, cardX, cardY, cardW, cardH, backgroundColor);
+
     // Subtle inner accent line strictly inside
     ctx.strokeStyle = accentColor + '60';
     ctx.lineWidth = 1.5;
@@ -100,16 +110,17 @@ export async function createPhotoStripBlob(
 
     // Photos strictly inside
     const startY = cardY + headerH + padding;
-    for (let i = 0; i < 4; i++) {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
+    for (let i = 0; i < totalShots; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
       const img = items[i % items.length];
       const x = cardX + padding + col * (photoW + padding);
       const y = startY + row * (photoH + padding);
+      const off = imageOffsets[i] || { x: 0.5, y: 0.5 };
 
-      drawRoundedImage(ctx, img, x, y, photoW, photoH, preset.frameRadius);
-      ctx.strokeStyle = borderColor + '33';
-      ctx.lineWidth = 1;
+      drawRoundedImage(ctx, img, x, y, photoW, photoH, frameRadius, off.x, off.y);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
       ctx.strokeRect(x, y, photoW, photoH);
     }
 
@@ -123,18 +134,22 @@ export async function createPhotoStripBlob(
     canvas.width = canvasW;
     canvas.height = canvasH;
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvasW, canvasH);
 
-    ctx.strokeStyle = '#E4E4E7';
-    ctx.lineWidth = 3;
+    const activePattern = config.themePattern || preset.pattern || 'none';
+    renderPatternBackground(ctx, activePattern, 0, 0, canvasW, canvasH, backgroundColor);
+
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 4;
     ctx.strokeRect(2, 2, canvasW - 4, canvasH - 4);
 
     const photoSize = 580;
     const photoX = (canvasW - photoSize) / 2;
     const photoY = 35;
     if (items[0]) {
-      drawRoundedImage(ctx, items[0], photoX, photoY, photoSize, photoSize, 4);
+      const off = imageOffsets[0] || { x: 0.5, y: 0.5 };
+      drawRoundedImage(ctx, items[0], photoX, photoY, photoSize, photoSize, 4, off.x, off.y);
     }
 
     ctx.fillStyle = '#18181B';
@@ -154,10 +169,13 @@ export async function createPhotoStripBlob(
     const innerW = contentW + padding * 2;
     const canvasW = innerW + borderWidth * 2;
 
-    const headerH = preset.id === 'pirate-wanted' ? 135 : 105;
-    const footerH = 80;
+    const hasHeaderContent = !!(headerText && (headerText.trim() || subtitleText.trim()));
+    const fitExact = config.fitExactEdges || (padding === 0 && !hasHeaderContent);
+
+    const headerH = preset.id === 'pirate-wanted' ? 135 : (hasHeaderContent ? 105 : (fitExact ? 0 : 18));
+    const footerH = showDate ? 70 : (fitExact ? 0 : 18);
     const photosTotalH = items.length * photoH + (items.length - 1) * padding;
-    const innerH = headerH + photosTotalH + footerH + padding * 2;
+    const innerH = headerH + photosTotalH + footerH + (fitExact ? 0 : padding * 2);
     const canvasH = innerH + borderWidth * 2;
 
     canvas.width = canvasW;
@@ -176,6 +194,9 @@ export async function createPhotoStripBlob(
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(cardX, cardY, cardW, cardH);
 
+    const activePattern = config.themePattern || preset.pattern || 'none';
+    renderPatternBackground(ctx, activePattern, cardX, cardY, cardW, cardH, backgroundColor);
+
     // 3. Inner Decorative Framing (strictly inside card)
     if (preset.id === 'pirate-wanted') {
       // Vintage Wanted poster inner line
@@ -189,6 +210,8 @@ export async function createPhotoStripBlob(
       ctx.strokeStyle = accentColor;
       ctx.lineWidth = 2;
       ctx.strokeRect(cardX + 8, cardY + 8, cardW - 16, cardH - 16);
+    } else if (preset.pattern) {
+      // No border overlay for patterned designs to let pattern pop cleanly
     } else {
       // Delicate accent border line strictly inside
       ctx.strokeStyle = accentColor + '70';
@@ -197,26 +220,29 @@ export async function createPhotoStripBlob(
     }
 
     // 4. Header (strictly inside top)
-    const headerCenterY = cardY + (preset.id === 'pirate-wanted' ? 50 : 38);
-    drawHeader(
-      ctx,
-      canvasW / 2,
-      headerCenterY,
-      headerText,
-      subtitleText,
-      textColor,
-      accentColor,
-      preset.id
-    );
+    if (hasHeaderContent || preset.id === 'pirate-wanted') {
+      const headerCenterY = cardY + (preset.id === 'pirate-wanted' ? 50 : 38);
+      drawHeader(
+        ctx,
+        canvasW / 2,
+        headerCenterY,
+        headerText,
+        subtitleText,
+        textColor,
+        accentColor,
+        preset.id
+      );
 
-    // Header Icon
-    drawDecorationIcon(ctx, canvasW / 2, cardY + 16, preset.decorationType, accentColor);
+      // Header Icon
+      drawDecorationIcon(ctx, canvasW / 2, cardY + 16, preset.decorationType, accentColor);
+    }
 
     // 5. Photos Stack (strictly inside card boundaries)
-    let currentY = cardY + headerH + padding;
+    let currentY = cardY + (headerH > 0 ? headerH + padding : (fitExact ? 0 : padding));
     for (let i = 0; i < items.length; i++) {
       const img = items[i];
-      const photoX = cardX + padding + extraLeftPadding;
+      const photoX = cardX + (fitExact ? 0 : padding) + extraLeftPadding;
+      const off = imageOffsets[i] || { x: 0.5, y: 0.5 };
 
       // Korean style frame index (01, 02, 03, 04)
       if (preset.hasFrameNumbers) {
@@ -227,7 +253,7 @@ export async function createPhotoStripBlob(
       }
 
       // Draw photo with rounded corners
-      drawRoundedImage(ctx, img, photoX, currentY, photoW, photoH, preset.frameRadius);
+      drawRoundedImage(ctx, img, photoX, currentY, photoW, photoH, frameRadius, off.x, off.y);
 
       // Photo outline
       ctx.strokeStyle = accentColor + '50';
@@ -238,12 +264,14 @@ export async function createPhotoStripBlob(
     }
 
     // 6. Footer (strictly inside bottom of card)
-    const footerCenterY = cardY + cardH - footerH / 2;
-    if (preset.hasBarcode) {
-      drawBarcode(ctx, cardX + padding, footerCenterY - 14, 100, 28, textColor);
-      drawFooterBadge(ctx, canvasW / 2 + 45, footerCenterY, badgeText, showDate ? dateStr : null, textColor, accentColor, preset.decorationType);
-    } else {
-      drawFooterBadge(ctx, canvasW / 2, footerCenterY, badgeText, showDate ? dateStr : null, textColor, accentColor, preset.decorationType);
+    if (footerH > 0) {
+      const footerCenterY = cardY + cardH - footerH / 2;
+      if (preset.hasBarcode) {
+        drawBarcode(ctx, cardX + padding, footerCenterY - 14, 100, 28, textColor);
+        drawFooterBadge(ctx, canvasW / 2 + 45, footerCenterY, badgeText, showDate ? dateStr : null, textColor, accentColor, preset.decorationType);
+      } else {
+        drawFooterBadge(ctx, canvasW / 2, footerCenterY, badgeText, showDate ? dateStr : null, textColor, accentColor, preset.decorationType);
+      }
     }
   }
 
@@ -267,7 +295,9 @@ function drawRoundedImage(
   y: number,
   w: number,
   h: number,
-  radius: number
+  radius: number,
+  offsetPercentX: number = 0.5,
+  offsetPercentY: number = 0.5
 ) {
   ctx.save();
   ctx.beginPath();
@@ -286,12 +316,17 @@ function drawRoundedImage(
   let offsetX = 0;
   let offsetY = 0;
 
+  const clampX = Math.max(0, Math.min(1, offsetPercentX));
+  const clampY = Math.max(0, Math.min(1, offsetPercentY));
+
   if (imgRatio > targetRatio) {
     renderW = h * imgRatio;
-    offsetX = -(renderW - w) / 2;
+    const extraWidth = renderW - w;
+    offsetX = -extraWidth * clampX;
   } else {
     renderH = w / imgRatio;
-    offsetY = -(renderH - h) / 2;
+    const extraHeight = renderH - h;
+    offsetY = -extraHeight * clampY;
   }
 
   ctx.drawImage(img, x + offsetX, y + offsetY, renderW, renderH);
@@ -518,5 +553,460 @@ function drawBarcode(
     if (currentX > x + width) break;
   }
 
+  ctx.restore();
+}
+
+function renderPatternBackground(
+  ctx: CanvasRenderingContext2D,
+  pattern: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  bgColor: string
+) {
+  if (!pattern || pattern === 'none') return;
+
+  if (pattern === 'hearts') {
+    drawHeartPattern(ctx, x, y, w, h);
+  } else if (pattern === 'floral') {
+    drawFloralPattern(ctx, x, y, w, h);
+  } else if (pattern === 'celestial') {
+    drawCelestialPattern(ctx, x, y, w, h, bgColor);
+  } else if (pattern === 'nature') {
+    drawNaturePattern(ctx, x, y, w, h);
+  } else if (pattern === 'sparkles') {
+    drawSparklePattern(ctx, x, y, w, h);
+  } else if (pattern === 'cyber') {
+    drawCyberPattern(ctx, x, y, w, h);
+  } else if (pattern === 'cherries') {
+    drawCherriesPattern(ctx, x, y, w, h);
+  } else if (pattern === 'bows') {
+    drawBowsPattern(ctx, x, y, w, h);
+  } else if (pattern === 'stars') {
+    drawStarsPattern(ctx, x, y, w, h);
+  } else if (pattern === 'leopard') {
+    drawLeopardPattern(ctx, x, y, w, h);
+  } else if (pattern === 'clouds') {
+    drawCloudsPattern(ctx, x, y, w, h);
+  } else if (pattern === 'checkered') {
+    drawCheckeredPattern(ctx, x, y, w, h);
+  }
+}
+
+function drawHeartPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = '#EF4444'; // Bold red hearts
+  const stepX = 100;
+  const stepY = 100;
+
+  for (let py = y - 40; py < y + h + 80; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 50;
+    for (let px = x - 40; px < x + w + 80; px += stepX) {
+      drawHeart(ctx, px + rowOffset, py, 36);
+    }
+  }
+  ctx.restore();
+}
+
+function drawFloralPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 120;
+  const stepY = 120;
+  const colors = ['#F43F5E', '#FB7185', '#FACC15', '#34D399', '#818CF8'];
+
+  for (let py = y - 30; py < y + h + 80; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 60;
+    for (let px = x - 30; px < x + w + 80; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      // Draw leaves
+      ctx.fillStyle = '#10B981';
+      ctx.beginPath();
+      ctx.ellipse(cx - 16, cy + 12, 12, 6, Math.PI / 4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 16, cy - 12, 12, 6, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw 5 flower petals
+      const petalColor = colors[Math.abs(Math.floor(cx * 3 + cy * 7)) % colors.length];
+      ctx.fillStyle = petalColor;
+      for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / 5) {
+        const petX = cx + Math.cos(a) * 14;
+        const petY = cy + Math.sin(a) * 14;
+        ctx.beginPath();
+        ctx.arc(petX, petY, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Center of flower
+      ctx.fillStyle = '#FEF08A';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCelestialPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, bgColor: string) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 110;
+  const stepY = 110;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 55;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+      const isMoon = Math.floor((cx + cy) / 100) % 2 === 0;
+
+      if (isMoon) {
+        // Full Moon Circle
+        ctx.fillStyle = '#EAB308';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dynamic Cutout using chosen background color
+        ctx.fillStyle = bgColor || '#0B0F19';
+        ctx.beginPath();
+        ctx.arc(cx + 6, cy - 4, 12, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#38BDF8';
+        drawSparkle(ctx, cx, cy, 12);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawNaturePattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 120;
+  const stepY = 120;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 60;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+      const type = Math.abs(Math.floor((cx * 2 + cy * 5) / 100)) % 3;
+
+      if (type === 0) {
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#FBBF24';
+        ctx.lineWidth = 2;
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(a) * 15, cy + Math.sin(a) * 15);
+          ctx.lineTo(cx + Math.cos(a) * 20, cy + Math.sin(a) * 20);
+          ctx.stroke();
+        }
+      } else if (type === 1) {
+        ctx.fillStyle = '#059669';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 18);
+        ctx.lineTo(cx - 12, cy + 6);
+        ctx.lineTo(cx - 6, cy + 6);
+        ctx.lineTo(cx - 14, cy + 16);
+        ctx.lineTo(cx + 14, cy + 16);
+        ctx.lineTo(cx + 6, cy + 6);
+        ctx.lineTo(cx + 12, cy + 6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#78350F';
+        ctx.fillRect(cx - 2, cy + 16, 4, 6);
+      } else {
+        ctx.fillStyle = '#38BDF8';
+        ctx.beginPath();
+        ctx.arc(cx - 8, cy, 8, 0, Math.PI * 2);
+        ctx.arc(cx + 8, cy, 8, 0, Math.PI * 2);
+        ctx.arc(cx, cy - 6, 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawSparklePattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 90;
+  const stepY = 90;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 45;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+      ctx.fillStyle = '#A855F7';
+      drawSparkle(ctx, cx, cy, 14);
+      ctx.fillStyle = '#F472B6';
+      drawSparkle(ctx, cx + 18, cy + 18, 8);
+    }
+  }
+  ctx.restore();
+}
+
+function drawCyberPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = '#00FF66';
+  ctx.font = 'bold 12px "Courier New", monospace';
+  ctx.globalAlpha = 0.35;
+  const stepX = 100;
+  const stepY = 80;
+
+  for (let py = y - 10; py < y + h + 40; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 50;
+    for (let px = x - 10; px < x + w + 40; px += stepX) {
+      ctx.fillText('{ </ > }', px + rowOffset, py);
+    }
+  }
+  ctx.globalAlpha = 1.0;
+  ctx.restore();
+}
+
+function drawCherriesPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 110;
+  const stepY = 110;
+
+  for (let py = y - 30; py < y + h + 70; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 55;
+    for (let px = x - 30; px < x + w + 70; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      // Stems
+      ctx.strokeStyle = '#15803D';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - 8, cy + 6);
+      ctx.quadraticCurveTo(cx, cy - 14, cx + 2, cy - 16);
+      ctx.moveTo(cx + 8, cy + 6);
+      ctx.quadraticCurveTo(cx, cy - 14, cx + 2, cy - 16);
+      ctx.stroke();
+
+      // Leaf
+      ctx.fillStyle = '#22C55E';
+      ctx.beginPath();
+      ctx.ellipse(cx + 6, cy - 16, 7, 3.5, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Double Red Cherries
+      ctx.fillStyle = '#E11D48';
+      ctx.beginPath();
+      ctx.arc(cx - 8, cy + 6, 8, 0, Math.PI * 2);
+      ctx.arc(cx + 8, cy + 6, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Gloss Highlights
+      ctx.fillStyle = '#FFFFFF';
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.arc(cx - 10, cy + 4, 2.5, 0, Math.PI * 2);
+      ctx.arc(cx + 6, cy + 4, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+    }
+  }
+  ctx.restore();
+}
+
+function drawBowsPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 115;
+  const stepY = 115;
+
+  for (let py = y - 30; py < y + h + 70; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 58;
+    for (let px = x - 30; px < x + w + 70; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      ctx.fillStyle = '#F472B6';
+      // Left Loop
+      ctx.beginPath();
+      ctx.ellipse(cx - 11, cy - 2, 10, 6, -Math.PI / 6, 0, Math.PI * 2);
+      ctx.fill();
+      // Right Loop
+      ctx.beginPath();
+      ctx.ellipse(cx + 11, cy - 2, 10, 6, Math.PI / 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ribbon Tails
+      ctx.strokeStyle = '#F472B6';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - 2, cy + 2);
+      ctx.lineTo(cx - 10, cy + 14);
+      ctx.moveTo(cx + 2, cy + 2);
+      ctx.lineTo(cx + 10, cy + 14);
+      ctx.stroke();
+
+      // Knot Center
+      ctx.fillStyle = '#DB2777';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawStarsPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 100;
+  const stepY = 100;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 50;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      ctx.fillStyle = '#F59E0B';
+      drawSparkle(ctx, cx, cy, 15);
+
+      ctx.fillStyle = '#FCD34D';
+      drawSparkle(ctx, cx + 22, cy + 22, 7);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(cx - 18, cy + 18, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawLeopardPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 90;
+  const stepY = 90;
+
+  for (let py = y - 20; py < y + h + 50; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 45;
+    for (let px = x - 20; px < x + w + 50; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      // Center Tan Fill
+      ctx.fillStyle = '#D97706';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 10, 7, Math.PI / 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer Dark Spots
+      ctx.strokeStyle = '#451A03';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(cx - 5, cy - 3, 6, Math.PI * 0.7, Math.PI * 1.8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + 5, cy + 3, 6, Math.PI * 1.7, Math.PI * 2.8);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCloudsPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const stepX = 130;
+  const stepY = 110;
+
+  for (let py = y - 20; py < y + h + 60; py += stepY) {
+    const rowOffset = (Math.floor((py - y) / stepY) % 2) * 65;
+    for (let px = x - 20; px < x + w + 60; px += stepX) {
+      const cx = px + rowOffset;
+      const cy = py;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.arc(cx - 10, cy, 10, 0, Math.PI * 2);
+      ctx.arc(cx + 10, cy, 10, 0, Math.PI * 2);
+      ctx.arc(cx, cy - 8, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#38BDF8';
+      drawSparkle(ctx, cx + 22, cy - 14, 5);
+    }
+  }
+  ctx.restore();
+}
+
+function drawCheckeredPattern(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+  const tileSize = 32;
+
+  for (let py = y; py < y + h; py += tileSize) {
+    const rowIdx = Math.floor((py - y) / tileSize);
+    for (let px = x; px < x + w; px += tileSize) {
+      const colIdx = Math.floor((px - x) / tileSize);
+      if ((rowIdx + colIdx) % 2 === 0) {
+        ctx.fillRect(px, py, tileSize, tileSize);
+      }
+    }
+  }
   ctx.restore();
 }

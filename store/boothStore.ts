@@ -1,33 +1,5 @@
 import { create } from 'zustand';
-import { BoothMode, BoothState, CountdownSeconds, ThemeMode } from '@/types/booth';
-
-interface BoothActions {
-  setMode: (mode: BoothMode) => void;
-  setCountdownDuration: (duration: CountdownSeconds) => void;
-  setIsCountingDown: (isCountingDown: boolean) => void;
-  setCurrentCountdown: (count: number) => void;
-  setIsCapturing: (isCapturing: boolean) => void;
-  setIsRecording: (isRecording: boolean) => void;
-  setRecordingSeconds: (seconds: number) => void;
-  startSequence: (totalShots: number) => void;
-  addSequenceBlob: (blob: Blob) => void;
-  clearSequence: () => void;
-  toggleFlash: () => void;
-  toggleSound: () => void;
-  togglePoseGuide: () => void;
-  toggleCountdownTimer: () => void;
-  setPosePrompt: (prompt: string | null) => void;
-  setTheme: (theme: ThemeMode) => void;
-  setIsFullscreen: (isFullscreen: boolean) => void;
-  setActiveTab: (tab: 'booth' | 'gallery' | 'settings') => void;
-  setStorageLocation: (location: string) => void;
-  setMaxStorageSize: (size: string) => void;
-  setSelectedStripLayout: (layoutId: string) => void;
-  replaceSequenceBlob: (index: number, blob: Blob) => void;
-  setShowSequenceReviewModal: (show: boolean) => void;
-  setRetakeIndex: (index: number | null) => void;
-  setSequenceShotStatusText: (text: string | null) => void;
-}
+import { BoothMode, BoothState, BoothActions, CountdownSeconds, ThemeMode } from '@/types/booth';
 
 export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   mode: 'PHOTO',
@@ -46,6 +18,7 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   isFlashEnabled: true,
   isSoundEnabled: true,
   isPoseGuideEnabled: false,
+  isLivePhotoEnabled: false,
   isCountdownTimerEnabled: true,
   currentPosePrompt: null,
   theme: 'light',
@@ -84,6 +57,8 @@ export const useBoothStore = create<BoothState & BoothActions>((set) => ({
   toggleFlash: () => set((state) => ({ isFlashEnabled: !state.isFlashEnabled })),
   toggleSound: () => set((state) => ({ isSoundEnabled: !state.isSoundEnabled })),
   togglePoseGuide: () => set((state) => ({ isPoseGuideEnabled: !state.isPoseGuideEnabled })),
+  toggleLivePhoto: () => set((state) => ({ isLivePhotoEnabled: !state.isLivePhotoEnabled })),
+  setIsLivePhotoEnabled: (isLivePhotoEnabled: boolean) => set({ isLivePhotoEnabled }),
   toggleCountdownTimer: () => set((state) => ({ isCountdownTimerEnabled: !state.isCountdownTimerEnabled })),
   setPosePrompt: (currentPosePrompt) => set({ currentPosePrompt }),
   setTheme: (theme) => {

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGallery } from '@/hooks/useGallery';
 import { GalleryItem } from './GalleryItem';
 import { PhotoViewer } from './PhotoViewer';
 import { StripBuilder } from './StripBuilder';
 import { Button } from '../ui/Button';
-import { Image as ImageIcon, Film, Layers, Sparkles, Search, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Film, Layers, Sparkles, Search, Trash2, Upload, RotateCw } from 'lucide-react';
 import { PhotoRecord } from '@/types/photo';
+import { processAndSaveUploadedFile } from '@/lib/storage/upload';
 
 export const Gallery: React.FC = () => {
   const {
@@ -25,6 +26,46 @@ export const Gallery: React.FC = () => {
   } = useGallery();
 
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    setIsUploading(true);
+
+    let successCount = 0;
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      setUploadProgress(`Uploading ${i + 1}/${fileList.length}...`);
+      try {
+        await processAndSaveUploadedFile(file);
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to upload ${file.name}:`, err);
+        alert(`Failed to upload ${file.name}. Please ensure it is a valid image or video format (JPEG, PNG, MP4, etc).`);
+      }
+    }
+
+    if (successCount > 0 && successCount < fileList.length) {
+      alert(`Successfully uploaded ${successCount} out of ${fileList.length} files.`);
+    }
+
+    await loadGalleryData();
+    setIsUploading(false);
+    setUploadProgress(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Combine items for filtering
   const allItems = [...photos, ...videos].sort((a, b) => b.createdAt - a.createdAt);
@@ -50,21 +91,42 @@ export const Gallery: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/jpeg, image/png, image/webp, image/gif, video/mp4, video/webm, video/quicktime"
+            multiple
+            className="hidden"
+          />
+
+          <div className="relative flex-1 md:flex-none">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Search your memories..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-100"
+              className="pl-9 pr-4 py-2 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-100"
             />
           </div>
           <Button
             variant="primary"
-            onClick={() => {}}
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="flex items-center gap-2 shrink-0"
           >
-            <span>Upload</span>
+            {isUploading ? (
+              <>
+                <RotateCw className="w-4 h-4 animate-spin" />
+                <span>{uploadProgress || 'Uploading...'}</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                <span>Upload</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -120,8 +182,17 @@ export const Gallery: React.FC = () => {
           </div>
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-200 mb-1">No Memories Found</h3>
           <p className="text-sm text-zinc-500 max-w-sm mb-6">
-            You haven't captured any photos in this category yet. Head to the booth to snap your first memory!
+            You haven't captured or uploaded any photos in this category yet. Snap a photo in the booth or upload photos from your device!
           </p>
+          <Button
+            variant="primary"
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Photos / Videos</span>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">

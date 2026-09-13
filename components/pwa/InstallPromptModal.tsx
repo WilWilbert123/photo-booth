@@ -1,13 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Share, PlusSquare, X, Download, Smartphone } from 'lucide-react';
+import { Share, PlusSquare, X, Download, Smartphone, Laptop, MoreVertical, Compass, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface InstallPromptModalProps {
   isOpen: boolean;
   onClose: () => void;
   isIOS?: boolean;
+  isMac?: boolean;
+  isAndroid?: boolean;
+  hasNativePrompt?: boolean;
   onInstallClick?: () => void;
 }
 
@@ -15,13 +18,16 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
   isOpen,
   onClose,
   isIOS = false,
+  isMac = false,
+  isAndroid = false,
+  hasNativePrompt = false,
   onInstallClick,
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100000] bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col gap-5">
+    <div className="fixed inset-0 z-[100000] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200 select-none">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
@@ -34,60 +40,28 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-zinc-800 border border-blue-100 dark:border-zinc-700 p-2 flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-zinc-800 border border-blue-100 dark:border-zinc-700 p-2 flex items-center justify-center shrink-0 shadow-sm">
             <img src="/logo.png" alt="PhotoBooth Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-              Install PhotoBooth App
+              Install PhotoBooth Studio
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
-              Offline-first experience & full screen camera
+              Offline access, full screen camera & app icon
             </p>
           </div>
         </div>
 
-        {/* Modal Content depending on Platform */}
-        {isIOS ? (
-          <div className="flex flex-col gap-4 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
-            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              <Smartphone className="w-4 h-4" />
-              <span>iOS Safari Installation</span>
+        {/* Native Browser Install Prompt Trigger (if supported by Chrome/Edge) */}
+        {hasNativePrompt && (
+          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+              <Download className="w-4 h-4" />
+              <span>Direct Browser Install Ready</span>
             </div>
-
-            <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
-              <li className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                  1
-                </span>
-                <span className="flex-1 leading-relaxed">
-                  Tap the <strong className="text-zinc-900 dark:text-white inline-flex items-center gap-1 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded"><Share className="w-3.5 h-3.5 text-blue-500 inline" /> Share</strong> button at the bottom of Safari.
-                </span>
-              </li>
-
-              <li className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                  2
-                </span>
-                <span className="flex-1 leading-relaxed">
-                  Scroll down the share options and tap <strong className="text-zinc-900 dark:text-white inline-flex items-center gap-1 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded"><PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" /> Add to Home Screen</strong>.
-                </span>
-              </li>
-
-              <li className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                  3
-                </span>
-                <span className="flex-1 leading-relaxed">
-                  Tap <strong className="text-zinc-900 dark:text-white">Add</strong> in the top right corner to install to your iPhone home screen!
-                </span>
-              </li>
-            </ol>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-              Install PhotoBooth Studio on your device for instant offline access, full-screen camera mode, and faster performance directly from your home screen or desktop.
+            <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              Your browser supports 1-click installation. Tap below to add PhotoBooth Studio immediately to your apps!
             </p>
             <Button
               variant="primary"
@@ -96,16 +70,136 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
                 if (onInstallClick) onInstallClick();
                 onClose();
               }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold shadow-md"
             >
-              <Download className="w-5 h-5" />
-              <span>Install Application</span>
+              <Download className="w-4 h-4" />
+              <span>Click to Install Now</span>
             </Button>
           </div>
         )}
 
+        {/* Platform Specific Step-by-Step Instructions */}
+        {isIOS ? (
+          <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              <Smartphone className="w-4 h-4" />
+              <span>iOS Safari Installation Guide</span>
+            </div>
+
+            <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  1
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Tap the <strong className="text-zinc-900 dark:text-white inline-flex items-center gap-1 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded"><Share className="w-3.5 h-3.5 text-blue-500 inline" /> Share</strong> icon in Safari's bottom toolbar.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  2
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Scroll down the menu and tap <strong className="text-zinc-900 dark:text-white inline-flex items-center gap-1 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded"><PlusSquare className="w-3.5 h-3.5 text-blue-500 inline" /> Add to Home Screen</strong>.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  3
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Tap <strong className="text-zinc-900 dark:text-white">Add</strong> in the top right to pin PhotoBooth to your home screen!
+                </span>
+              </li>
+            </ol>
+          </div>
+        ) : isMac ? (
+          <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              <Laptop className="w-4 h-4" />
+              <span>macOS Dock & App Installation</span>
+            </div>
+
+            <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  1
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  <strong>Chrome / Edge:</strong> Look at the right side of your address bar at the top for the <strong className="text-zinc-900 dark:text-white bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">Install Icon (Computer + Arrow)</strong> or click Chrome Menu (⋮) &gt; <strong>Install PhotoBooth Studio</strong>.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  2
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  <strong>Safari (macOS Sonoma+):</strong> Click <strong>File</strong> in the top Mac menu bar &gt; select <strong className="text-zinc-900 dark:text-white bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">Add to Dock</strong>.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  3
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Click <strong>Install / Add</strong> to launch PhotoBooth as a desktop app in your Mac Launchpad and Dock!
+                </span>
+              </li>
+            </ol>
+          </div>
+        ) : isAndroid ? (
+          <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              <Smartphone className="w-4 h-4" />
+              <span>Android Chrome Installation</span>
+            </div>
+
+            <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  1
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Tap Chrome's <strong className="text-zinc-900 dark:text-white inline-flex items-center gap-1 bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded"><MoreVertical className="w-3.5 h-3.5 text-blue-500 inline" /> 3-Dots Menu</strong> in top right.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  2
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Select <strong className="text-zinc-900 dark:text-white">Install app</strong> or <strong className="text-zinc-900 dark:text-white">Add to Home screen</strong>.
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  3
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Confirm <strong className="text-zinc-900 dark:text-white">Install</strong> to add PhotoBooth directly to your app launcher!
+                </span>
+              </li>
+            </ol>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 text-xs text-zinc-600 dark:text-zinc-300">
+            <p>
+              To install PhotoBooth Studio on your browser: Look for the <strong className="text-zinc-900 dark:text-white">Install App</strong> icon in your browser's address bar or open the browser menu and select <strong>Install App / Add to Desktop</strong>.
+            </p>
+          </div>
+        )}
+
         {/* Modal Action / Footer */}
-        <div className="flex items-center justify-end pt-1">
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Works 100% Offline
+          </span>
           <button
             onClick={onClose}
             className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-3 py-2"
