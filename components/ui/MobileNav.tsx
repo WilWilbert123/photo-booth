@@ -21,6 +21,7 @@ export const MobileNav: React.FC = () => {
     canInstall, 
     isIOS, 
     isMac, 
+    isWindows,
     isAndroid, 
     showInstallModal, 
     setShowInstallModal, 
@@ -89,7 +90,7 @@ export const MobileNav: React.FC = () => {
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
-              <span>{isInstalling ? 'Installing...' : isIOS ? 'Add to Home' : 'Install App'}</span>
+              <span>{isInstalling ? 'Installing...' : isIOS ? 'Add to Home' : isAndroid ? 'Install APK' : 'Install App'}</span>
             </button>
           )}
 
@@ -151,6 +152,7 @@ export const MobileNav: React.FC = () => {
         onClose={() => setShowInstallModal(false)}
         isIOS={isIOS}
         isMac={isMac}
+        isWindows={isWindows}
         isAndroid={isAndroid}
         hasNativePrompt={hasNativePrompt}
         onInstallClick={triggerInstall}
