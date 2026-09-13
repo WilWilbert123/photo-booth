@@ -27,7 +27,19 @@ import {
 
 export default function SettingsPage() {
   const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
-  const { canInstall, isStandalone, isIOS, showIOSModal, setShowIOSModal, triggerInstall } = useInstallPWA();
+  const { 
+    canInstall, 
+    isStandalone, 
+    isIOS, 
+    isMac, 
+    isAndroid, 
+    showInstallModal, 
+    setShowInstallModal, 
+    isInstalling, 
+    isInstalledSuccess,
+    hasNativePrompt,
+    triggerInstall 
+  } = useInstallPWA();
 
   const loadQuota = () => {
     getStorageQuota()
@@ -149,15 +161,30 @@ export default function SettingsPage() {
 
               {isStandalone ? (
                 <span className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                  <CheckCircle className="w-4 h-4" /> Installed
+                  <CheckCircle className="w-4 h-4 text-emerald-500" /> Installed
                 </span>
               ) : (
                 <button
                   onClick={triggerInstall}
-                  className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-sm active:scale-95 flex items-center gap-2"
+                  disabled={isInstalling}
+                  className={`self-start sm:self-auto px-4 py-2.5 rounded-xl text-white text-xs font-semibold transition-all shadow-sm active:scale-95 flex items-center gap-2 ${
+                    isInstalling ? 'bg-blue-400 cursor-wait animate-pulse' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
-                  {isIOS ? <Smartphone className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                  <span>{isIOS ? 'Add to Home Screen' : 'Install Application'}</span>
+                  {isInstalling ? (
+                    <RotateCw className="w-4 h-4 animate-spin" />
+                  ) : isIOS ? (
+                    <Smartphone className="w-4 h-4" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isInstalling 
+                      ? 'Installing...' 
+                      : isIOS 
+                      ? 'Add to Home Screen' 
+                      : 'Install Application'}
+                  </span>
                 </button>
               )}
             </div>
@@ -470,9 +497,13 @@ export default function SettingsPage() {
       </div>
 
       <InstallPromptModal
-        isOpen={showIOSModal}
-        onClose={() => setShowIOSModal(false)}
-        isIOS={true}
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+        isIOS={isIOS}
+        isMac={isMac}
+        isAndroid={isAndroid}
+        hasNativePrompt={hasNativePrompt}
+        onInstallClick={triggerInstall}
       />
     </div>
   );

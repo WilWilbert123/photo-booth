@@ -14,6 +14,8 @@ export interface PhotoRecord {
   effectSettings: Record<string, number | string | boolean>;
   sessionId?: string;
   type: PhotoType;
+  liveVideoBlob?: Blob;
+  isLivePhoto?: boolean;
   metadata?: {
     cameraId?: string;
     facingMode?: string;
@@ -27,6 +29,7 @@ export interface PhotoStripConfig {
     | 'vertical-3'
     | 'vertical-4'
     | 'grid-2x2'
+    | 'grid-2x3'
     | 'polaroid'
     | 'family'
     | 'couple'
@@ -41,11 +44,26 @@ export interface PhotoStripConfig {
     | 'bounty-hunter'
     | 'software-engineer'
     | 'black-hat'
-    | 'red-hat';
+    | 'red-hat'
+    | 'neon-cyberpunk'
+    | 'y2k-aesthetic'
+    | 'gothic-dark'
+    | 'fairycore'
+    | 'minimalist-beige'
+    | 'red-hearts-black'
+    | 'red-hearts-pink'
+    | 'pastel-floral'
+    | 'periwinkle-pet';
+  themePattern?: 'none' | 'hearts' | 'celestial' | 'nature' | 'floral' | 'sparkles' | 'cyber' | 'pirate' | 'korean' | 'cherries' | 'bows' | 'stars' | 'leopard' | 'clouds' | 'checkered';
   backgroundColor?: string;
   borderColor?: string;
+  textColor?: string;
+  headerColor?: string;
   borderWidth?: number;
   padding?: number;
+  frameRadius?: number;
+  headerMargin?: number;
+  fitExactEdges?: boolean;
   headerText?: string;
   subtitleText?: string;
   badgeText?: string;
@@ -53,4 +71,5 @@ export interface PhotoStripConfig {
   dateText?: string;
   filterId?: string;
   themeId?: string;
+  imageOffsets?: Array<{ x: number; y: number }>;
 }

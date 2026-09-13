@@ -14,7 +14,8 @@ import { arTracker } from '@/lib/effects/arTracker';
 
 export function usePhotoBooth(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  onTriggerFlash?: () => void
+  onTriggerFlash?: () => void,
+  canvasRef?: React.RefObject<HTMLCanvasElement | null>
 ) {
   const {
     mode,
@@ -137,6 +138,66 @@ export function usePhotoBooth(
 
   const isBoothSoundEnabled = () => useBoothStore.getState().isSoundEnabled;
 
+  const recordLiveMotionClip = async (
+    rawStream: MediaStream | null,
+    canvasEl: HTMLCanvasElement | null
+  ): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      try {
+        let streamToRecord: MediaStream | null = null;
+        if (canvasEl && typeof (canvasEl as any).captureStream === 'function') {
+          try {
+            streamToRecord = (canvasEl as any).captureStream(30);
+          } catch (e) {
+            console.warn('Canvas captureStream fallback to raw camera stream:', e);
+          }
+        }
+        if (!streamToRecord) {
+          streamToRecord = rawStream;
+        }
+
+        if (!streamToRecord || typeof window === 'undefined' || !window.MediaRecorder) {
+          resolve(null);
+          return;
+        }
+
+        let options: MediaRecorderOptions = {};
+        if (typeof MediaRecorder.isTypeSupported === 'function') {
+          if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+            options = { mimeType: 'video/webm;codecs=vp9' };
+          } else if (MediaRecorder.isTypeSupported('video/webm')) {
+            options = { mimeType: 'video/webm' };
+          } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            options = { mimeType: 'video/mp4' };
+          }
+        }
+
+        const mediaRecorder = new MediaRecorder(streamToRecord, options);
+        const chunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const mime = options.mimeType || mediaRecorder.mimeType || 'video/webm';
+          const videoBlob = new Blob(chunks, { type: mime });
+          resolve(videoBlob);
+        };
+
+        mediaRecorder.start(100);
+        setTimeout(() => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+        }, 1600);
+      } catch (err) {
+        console.warn('Live photo recording warning:', err);
+        resolve(null);
+      }
+    });
+  };
+
   const executeCaptureFlow = useCallback(async () => {
     if (!isCameraReady()) {
       setIsCapturing(false);
@@ -144,14 +205,22 @@ export function usePhotoBooth(
     }
     setIsCapturing(true);
     
-    const { mode, selectedStripLayout } = useBoothStore.getState();
+    const { mode, selectedStripLayout, isLivePhotoEnabled } = useBoothStore.getState();
     const { activeEffectId, strength } = useEffectStore.getState();
+    const { stream } = useCameraStore.getState();
 
     try {
       if (mode === 'PHOTO' || mode === 'POLAROID') {
         if (onTriggerFlash && useBoothStore.getState().isFlashEnabled) {
           onTriggerFlash();
         }
+
+        // Live Photo motion clip capture (records canvas with active filter/effect applied!)
+        let liveVideoBlob: Blob | undefined;
+        if (isLivePhotoEnabled && (stream || canvasRef?.current)) {
+          liveVideoBlob = (await recordLiveMotionClip(stream, canvasRef?.current || null)) || undefined;
+        }
+
         const blob = await captureSingleSnapshot();
         setIsProcessing(true);
         const thumbnailBlob = await createThumbnailFromBlob(blob);
@@ -167,6 +236,8 @@ export function usePhotoBooth(
           effectId: activeEffectId,
           effectSettings: { strength },
           type: mode === 'POLAROID' ? 'polaroid' : 'single',
+          liveVideoBlob,
+          isLivePhoto: !!liveVideoBlob,
         };
 
         await savePhotoToDB(record);

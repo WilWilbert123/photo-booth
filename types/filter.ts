@@ -25,6 +25,8 @@ export type FilterCategory =
   | 'vintage'
   | 'moody'
   | 'monochrome'
+  | 'beauty'
+  | 'lens'
   | 'video'
   | 'ar';
 

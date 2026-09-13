@@ -10,8 +10,12 @@ interface BeforeInstallPromptEvent extends Event {
 export function useInstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [isInstalledSuccess, setIsInstalledSuccess] = useState(false);
 
   useEffect(() => {
     // Check if running as standalone PWA
@@ -23,10 +27,15 @@ export function useInstallPWA() {
       setIsStandalone(Boolean(isStandaloneMode));
     };
 
-    // Detect iOS
+    // Detect Platform
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const isMacDevice = /macintosh|mac os x/.test(userAgent) && !isIOSDevice;
+    const isAndroidDevice = /android/.test(userAgent);
+
     setIsIOS(isIOSDevice);
+    setIsMac(isMacDevice);
+    setIsAndroid(isAndroidDevice);
 
     checkStandalone();
 
@@ -40,6 +49,9 @@ export function useInstallPWA() {
     window.addEventListener('appinstalled', () => {
       setDeferredPrompt(null);
       setIsStandalone(true);
+      setIsInstalling(false);
+      setIsInstalledSuccess(true);
+      setTimeout(() => setIsInstalledSuccess(false), 5000);
     });
 
     return () => {
@@ -48,26 +60,46 @@ export function useInstallPWA() {
   }, []);
 
   const triggerInstall = useCallback(async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setDeferredPrompt(null);
-        setIsStandalone(true);
-      }
-    } else if (isIOS && !isStandalone) {
-      setShowIOSModal(true);
-    }
-  }, [deferredPrompt, isIOS, isStandalone]);
+    setIsInstalling(true);
 
-  const canInstall = !isStandalone && (Boolean(deferredPrompt) || isIOS);
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          setDeferredPrompt(null);
+          setIsStandalone(true);
+          setIsInstalledSuccess(true);
+          setTimeout(() => setIsInstalledSuccess(false), 5000);
+        }
+      } catch (err) {
+        console.error('PWA install prompt error:', err);
+        setShowInstallModal(true);
+      } finally {
+        setIsInstalling(false);
+      }
+    } else {
+      // Brief animation delay to provide visual response for fallback
+      await new Promise((res) => setTimeout(res, 800));
+      // If browser hasn't fired native prompt or user is on Safari/Mac/iOS:
+      setIsInstalling(false);
+      setShowInstallModal(true);
+    }
+  }, [deferredPrompt]);
+
+  const canInstall = !isStandalone;
 
   return {
     canInstall,
     isStandalone,
     isIOS,
-    showIOSModal,
-    setShowIOSModal,
+    isMac,
+    isAndroid,
+    showInstallModal,
+    setShowInstallModal,
+    isInstalling,
+    isInstalledSuccess,
+    hasNativePrompt: Boolean(deferredPrompt),
     triggerInstall,
   };
 }

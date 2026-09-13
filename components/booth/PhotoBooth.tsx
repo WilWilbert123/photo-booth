@@ -15,8 +15,17 @@ import { RefreshCw, LayoutTemplate, Settings2, Sparkles } from 'lucide-react';
 import { BoothMode } from '@/types/booth';
 import { useRouter } from 'next/navigation';
 
+const LivePhotoIcon: React.FC<{ className?: string; isActive?: boolean }> = ({ className = 'w-4 h-4', isActive }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" strokeDasharray="2 2" className={isActive ? 'animate-pulse' : ''} />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="2" fill="currentColor" />
+  </svg>
+);
+
 export const PhotoBooth: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastNavTime = useRef<number>(0);
   const [showFlash, setShowFlash] = useState(false);
   const [showMobileEffects, setShowMobileEffects] = useState(false);
@@ -45,12 +54,14 @@ export const PhotoBooth: React.FC = () => {
     triggerCaptureSequence,
     retakeSingleShot,
     finalizePhotoStrip
-  } = usePhotoBooth(videoRef, triggerFlash);
+  } = usePhotoBooth(videoRef, triggerFlash, canvasRef);
 
   const { 
     isFlashEnabled, 
     isPoseGuideEnabled, 
     togglePoseGuide,
+    isLivePhotoEnabled,
+    toggleLivePhoto,
     mode,
     setMode,
     countdownDuration,
@@ -69,6 +80,10 @@ export const PhotoBooth: React.FC = () => {
   const handleVideoAvailable = useCallback((video: HTMLVideoElement) => {
     videoRef.current = video;
     setLiveVideo(video);
+  }, []);
+
+  const handleCanvasAvailable = useCallback((canvas: HTMLCanvasElement) => {
+    canvasRef.current = canvas;
   }, []);
 
   const handleCaptureClick = () => {
@@ -97,10 +112,36 @@ export const PhotoBooth: React.FC = () => {
         {/* Main Live Camera Preview Frame */}
         <div className="relative flex-1 w-full rounded-2xl sm:rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 shadow-sm border border-zinc-200 dark:border-zinc-800 min-h-[300px] sm:min-h-[450px]">
 
-          <CameraPreview onVideoRefAvailable={handleVideoAvailable} />
+          <CameraPreview 
+            onVideoRefAvailable={handleVideoAvailable} 
+            onCanvasRefAvailable={handleCanvasAvailable}
+          />
+
+          {/* iOS Live Photo Active Yellow Badge */}
+          {isLivePhotoEnabled && (
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/90 text-zinc-950 font-extrabold text-[11px] tracking-wider uppercase shadow-md backdrop-blur-md">
+              <span className="w-2 h-2 rounded-full bg-zinc-950 animate-ping" />
+              LIVE PHOTO
+            </div>
+          )}
 
           {/* Floating Action Icons (Left) */}
           <div className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 flex flex-col gap-2.5 sm:gap-3 z-10">
+            {/* iOS Live Photo Toggle Button */}
+            <button 
+              onClick={toggleLivePhoto}
+              className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center border transition-all group relative ${
+                isLivePhotoEnabled 
+                  ? 'bg-amber-400 text-zinc-950 border-amber-300 font-bold shadow-lg shadow-amber-500/20' 
+                  : 'bg-zinc-900/50 text-white border-white/20 hover:bg-zinc-900/70'
+              }`}
+            >
+              <LivePhotoIcon isActive={isLivePhotoEnabled} className="w-4 h-4" />
+              <div className="hidden sm:block absolute left-full ml-3 px-2 py-1 bg-zinc-900/90 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                Live Photo: {isLivePhotoEnabled ? 'ON' : 'OFF'}
+              </div>
+            </button>
+
             <button 
               onClick={cycleMode}
               className="w-10 h-10 rounded-full bg-zinc-900/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 hover:bg-zinc-900/70 transition-colors group relative"
