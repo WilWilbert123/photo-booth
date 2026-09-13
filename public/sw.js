@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photo-booth-v2';
+const CACHE_NAME = 'photo-booth-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/booth',
@@ -7,6 +7,13 @@ const ASSETS_TO_CACHE = [
   '/offline',
   '/manifest.webmanifest',
   '/favicon.ico',
+  '/logo.png',
+  '/icon.png',
+  '/apple-icon.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable.png',
+  '/icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
