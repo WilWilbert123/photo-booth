@@ -44,24 +44,26 @@ export const Modal: React.FC<ModalProps> = ({
     '3xl': 'max-w-3xl',
     '4xl': 'max-w-4xl',
     '5xl': 'max-w-5xl',
-    full: 'max-w-[95vw] max-h-[95vh]',
+    full: 'w-full sm:w-[98vw] max-w-[98vw] h-full sm:h-[96vh] max-h-full sm:max-h-[96vh]',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className={`w-full ${widthClasses[maxWidth]} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-zinc-900 dark:text-zinc-100`}
+        className={`w-full ${widthClasses[maxWidth]} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col ${
+          maxWidth === 'full' ? 'h-full sm:h-[96vh] max-h-full sm:max-h-[96vh]' : 'max-h-[92vh]'
+        } text-zinc-900 dark:text-zinc-100`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50/50 dark:bg-zinc-900/50">
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dialog">
+          <div className="flex items-center justify-between px-4 py-2.5 sm:px-5 sm:py-3 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50/50 dark:bg-zinc-900/50">
+            <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dialog" className="w-7 h-7">
               <X className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
             </Button>
           </div>
         )}
-        <div className={`${contentPadding} overflow-y-auto max-h-[85vh]`}>{children}</div>
+        <div className={`${contentPadding} overflow-y-auto flex-1 min-h-0`}>{children}</div>
       </div>
     </div>
   );

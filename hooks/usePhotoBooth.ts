@@ -8,7 +8,9 @@ import { createPhotoStripBlob } from '@/lib/export/strip';
 import { getStripPreset } from '@/lib/export/stripPresets';
 import { createBoomerangGifBlob } from '@/lib/export/gif';
 import { savePhotoToDB } from '@/lib/storage/photos';
+import { saveVideoToDB } from '@/lib/storage/videos';
 import { PhotoRecord, PhotoStripConfig } from '@/types/photo';
+import { VideoRecord } from '@/types/video';
 import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
 import { arTracker } from '@/lib/effects/arTracker';
 
@@ -32,12 +34,17 @@ export function usePhotoBooth(
     startSequence,
     addSequenceBlob,
     clearSequence,
+    setIsRecording,
+    setRecordingSeconds,
   } = useBoothStore();
 
   const { activeEffectId, strength } = useEffectStore();
   const { isMirrored } = useCameraStore();
 
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const isCameraReady = useCallback((): boolean => {
@@ -104,8 +111,122 @@ export function usePhotoBooth(
     setIsCountingDown(false);
   }, []);
 
+  const stopVideoRecording = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+  }, []);
+
+  const startVideoRecording = useCallback(async () => {
+    if (!isCameraReady()) return;
+
+    const { setIsRecording, setRecordingSeconds } = useBoothStore.getState();
+    const { stream } = useCameraStore.getState();
+
+    let streamToRecord: MediaStream | null = null;
+    if (canvasRef?.current && typeof (canvasRef.current as any).captureStream === 'function') {
+      try {
+        streamToRecord = (canvasRef.current as any).captureStream(30);
+      } catch (e) {
+        console.warn('Canvas captureStream error:', e);
+      }
+    }
+    if (!streamToRecord) streamToRecord = stream;
+    if (!streamToRecord || typeof window === 'undefined' || !window.MediaRecorder) return;
+
+    let options: MediaRecorderOptions = {};
+    if (typeof MediaRecorder.isTypeSupported === 'function') {
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+        options = { mimeType: 'video/webm;codecs=vp9' };
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        options = { mimeType: 'video/webm' };
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        options = { mimeType: 'video/mp4' };
+      }
+    }
+
+    try {
+      const mediaRecorder = new MediaRecorder(streamToRecord, options);
+      recordingChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recordingChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const mime = options.mimeType || mediaRecorder.mimeType || 'video/webm';
+        const videoBlob = new Blob(recordingChunksRef.current, { type: mime });
+        setIsProcessing(true);
+
+        try {
+          let thumbnailBlob: Blob | undefined;
+          if (canvasRef?.current) {
+            thumbnailBlob = await new Promise((res) => canvasRef.current!.toBlob((b) => res(b || undefined), 'image/jpeg', 0.8));
+          }
+
+          const { recordingSeconds } = useBoothStore.getState();
+          const { activeEffectId } = useEffectStore.getState();
+
+          const record: VideoRecord = {
+            id: `video_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            blob: videoBlob,
+            createdAt: Date.now(),
+            duration: recordingSeconds || 5,
+            width: 1280,
+            height: 720,
+            thumbnailBlob,
+            effectId: activeEffectId,
+            type: 'video',
+          };
+
+          await saveVideoToDB(record);
+        } catch (err) {
+          console.error('Error saving video to DB:', err);
+        } finally {
+          setIsProcessing(false);
+          setIsRecording(false);
+          setRecordingSeconds(0);
+        }
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start(200);
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      let sec = 0;
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = setInterval(() => {
+        sec += 1;
+        useBoothStore.getState().setRecordingSeconds(sec);
+        if (sec >= 60) {
+          stopVideoRecording();
+        }
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to start video recording:', err);
+      setIsRecording(false);
+    }
+  }, [isCameraReady, canvasRef, stopVideoRecording]);
+
   const triggerCaptureSequence = useCallback(() => {
-    if (!isCameraReady() || isCountingDown || isCapturing) return;
+    if (!isCameraReady()) return;
+    const { mode, isRecording } = useBoothStore.getState();
+
+    if (mode === 'VIDEO') {
+      if (isRecording) {
+        stopVideoRecording();
+      } else {
+        startVideoRecording();
+      }
+      return;
+    }
+
+    if (isCountingDown || isCapturing) return;
 
     if (mode === 'PHOTO' || mode === 'POLAROID') {
       if (countdownDuration === 0) {
@@ -134,7 +255,7 @@ export function usePhotoBooth(
     } else {
       executeCaptureFlow();
     }
-  }, [countdownDuration, mode, isCountingDown, isCapturing, isSoundEnabled, setIsCountingDown, setCurrentCountdown]);
+  }, [countdownDuration, mode, isCountingDown, isCapturing, isSoundEnabled, setIsCountingDown, setCurrentCountdown, startVideoRecording, stopVideoRecording]);
 
   const isBoothSoundEnabled = () => useBoothStore.getState().isSoundEnabled;
 
