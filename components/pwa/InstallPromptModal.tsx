@@ -9,6 +9,7 @@ interface InstallPromptModalProps {
   onClose: () => void;
   isIOS?: boolean;
   isMac?: boolean;
+  isWindows?: boolean;
   isAndroid?: boolean;
   hasNativePrompt?: boolean;
   onInstallClick?: () => void;
@@ -19,6 +20,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
   onClose,
   isIOS = false,
   isMac = false,
+  isWindows = false,
   isAndroid = false,
   hasNativePrompt = false,
   onInstallClick,
@@ -115,6 +117,42 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
               </li>
             </ol>
           </div>
+        ) : isWindows ? (
+          <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+              <Laptop className="w-4 h-4" />
+              <span>Windows App Installation</span>
+            </div>
+
+            <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  1
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Look at the right side of your browser address bar for the <strong className="text-zinc-900 dark:text-white bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded">Install Icon (Computer + Arrow)</strong> or click Menu (⋮).
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  2
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Select <strong className="text-zinc-900 dark:text-white">Install PhotoBooth Studio</strong> (or <strong>Apps &gt; Install this site as an app</strong> in Edge).
+                </span>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  3
+                </span>
+                <span className="flex-1 leading-relaxed">
+                  Click <strong>Install</strong> to pin PhotoBooth directly to your Windows Taskbar &amp; Start Menu!
+                </span>
+              </li>
+            </ol>
+          </div>
         ) : isMac ? (
           <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
             <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
@@ -153,9 +191,14 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
           </div>
         ) : isAndroid ? (
           <div className="flex flex-col gap-3.5 bg-zinc-50 dark:bg-zinc-950/60 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60">
-            <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              <Smartphone className="w-4 h-4" />
-              <span>Android Chrome Installation</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                <Smartphone className="w-4 h-4" />
+                <span>Android APK Installation</span>
+              </div>
+              <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Native WebAPK (.apk)
+              </span>
             </div>
 
             <ol className="flex flex-col gap-3 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
@@ -173,7 +216,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
                   2
                 </span>
                 <span className="flex-1 leading-relaxed">
-                  Select <strong className="text-zinc-900 dark:text-white">Install app</strong> or <strong className="text-zinc-900 dark:text-white">Add to Home screen</strong>.
+                  Tap <strong className="text-zinc-900 dark:text-white">Install app</strong> or <strong className="text-zinc-900 dark:text-white">Add to Home screen</strong>.
                 </span>
               </li>
 
@@ -182,7 +225,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({
                   3
                 </span>
                 <span className="flex-1 leading-relaxed">
-                  Confirm <strong className="text-zinc-900 dark:text-white">Install</strong> to add PhotoBooth directly to your app launcher!
+                  Android Chrome automatically compiles and installs a native <strong className="text-zinc-900 dark:text-white">WebAPK package (.apk)</strong> directly to your home screen and app launcher!
                 </span>
               </li>
             </ol>

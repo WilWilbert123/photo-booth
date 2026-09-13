@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useTransition, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, Image as ImageIcon, Settings, ShieldCheck } from 'lucide-react';
+import { Camera, Image as ImageIcon, Settings } from 'lucide-react';
 import { useBoothStore } from '@/store/boothStore';
 import { AboutPrivacyModal } from './AboutPrivacyModal';
 
@@ -93,14 +93,6 @@ export const Sidebar: React.FC = () => {
               );
             })}
 
-            {/* About & Privacy Nav Item */}
-            <button
-              onClick={() => setIsAboutModalOpen(true)}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-left"
-            >
-              <ShieldCheck className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-              <span>About & Privacy</span>
-            </button>
           </nav>
         </div>
 

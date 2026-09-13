@@ -35,6 +35,7 @@ export default function SettingsPage() {
     isStandalone, 
     isIOS, 
     isMac, 
+    isWindows,
     isAndroid, 
     showInstallModal, 
     setShowInstallModal, 
@@ -157,6 +158,8 @@ export default function SettingsPage() {
                       ? 'Installed and running as a standalone app'
                       : isIOS
                       ? 'Add to iPhone / iPad Home Screen for full screen mode'
+                      : isAndroid
+                      ? 'Install native Android WebAPK (.apk) for full screen performance'
                       : 'Install web application for offline & full screen access'}
                   </p>
                 </div>
@@ -186,6 +189,12 @@ export default function SettingsPage() {
                       ? 'Installing...' 
                       : isIOS 
                       ? 'Add to Home Screen' 
+                      : isAndroid
+                      ? 'Install Android APK'
+                      : isMac
+                      ? 'Install Mac App'
+                      : isWindows
+                      ? 'Install Windows App'
                       : 'Install Application'}
                   </span>
                 </button>
@@ -528,6 +537,7 @@ export default function SettingsPage() {
         onClose={() => setShowInstallModal(false)}
         isIOS={isIOS}
         isMac={isMac}
+        isWindows={isWindows}
         isAndroid={isAndroid}
         hasNativePrompt={hasNativePrompt}
         onInstallClick={triggerInstall}

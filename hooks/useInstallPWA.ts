@@ -11,6 +11,7 @@ export function useInstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isMac, setIsMac] = useState(false);
+  const [isWindows, setIsWindows] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -31,10 +32,12 @@ export function useInstallPWA() {
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     const isMacDevice = /macintosh|mac os x/.test(userAgent) && !isIOSDevice;
+    const isWindowsDevice = /windows|win32|win64/.test(userAgent);
     const isAndroidDevice = /android/.test(userAgent);
 
     setIsIOS(isIOSDevice);
     setIsMac(isMacDevice);
+    setIsWindows(isWindowsDevice);
     setIsAndroid(isAndroidDevice);
 
     checkStandalone();
@@ -94,6 +97,7 @@ export function useInstallPWA() {
     isStandalone,
     isIOS,
     isMac,
+    isWindows,
     isAndroid,
     showInstallModal,
     setShowInstallModal,
