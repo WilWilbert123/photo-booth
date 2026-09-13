@@ -8,6 +8,8 @@ import { Toggle } from '@/components/ui/Toggle';
 import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
 import { getStorageQuota } from '@/lib/storage/migrations';
 import type { StorageQuotaInfo } from '@/types/storage';
+import { useInstallPWA } from '@/hooks/useInstallPWA';
+import { InstallPromptModal } from '@/components/pwa/InstallPromptModal';
 import { 
   Volume2, 
   Aperture, 
@@ -17,11 +19,15 @@ import {
   ChevronDown,
   HardDrive,
   Trash2,
-  Database
+  Database,
+  Download,
+  Smartphone,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
+  const { canInstall, isStandalone, isIOS, showIOSModal, setShowIOSModal, triggerInstall } = useInstallPWA();
 
   const loadQuota = () => {
     getStorageQuota()
@@ -120,6 +126,43 @@ export default function SettingsPage() {
         {/* Left Column (Camera, Effects, Storage) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
           
+          {/* App Installation Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-6 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  {isIOS ? <Smartphone className="w-5 h-5" /> : <Download className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                    Application Installation
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
+                    {isStandalone
+                      ? 'Installed and running as a standalone app'
+                      : isIOS
+                      ? 'Add to iPhone / iPad Home Screen for full screen mode'
+                      : 'Install web application for offline & full screen access'}
+                  </p>
+                </div>
+              </div>
+
+              {isStandalone ? (
+                <span className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                  <CheckCircle2 className="w-4 h-4" /> Installed
+                </span>
+              ) : (
+                <button
+                  onClick={triggerInstall}
+                  className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-sm active:scale-95 flex items-center gap-2"
+                >
+                  {isIOS ? <Smartphone className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                  <span>{isIOS ? 'Add to Home Screen' : 'Install Application'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Camera Card */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-6 shadow-2xs">
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-4">Camera</h2>
@@ -425,6 +468,12 @@ export default function SettingsPage() {
 
         </div>
       </div>
+
+      <InstallPromptModal
+        isOpen={showIOSModal}
+        onClose={() => setShowIOSModal(false)}
+        isIOS={true}
+      />
     </div>
   );
 }

@@ -47,7 +47,7 @@ export const Sidebar: React.FC = () => {
   ] as const;
 
   return (
-    <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col justify-between p-4 h-dvh sticky top-0 shrink-0 select-none">
+    <aside className="hidden lg:flex w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex-col justify-between p-4 h-dvh sticky top-0 shrink-0 select-none">
       <div className="flex flex-col gap-8">
         {/* Logo */}
         <div className="flex items-center justify-between px-2">

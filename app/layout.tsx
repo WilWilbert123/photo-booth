@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Sidebar } from '@/components/ui/Sidebar';
+import { MobileNav } from '@/components/ui/MobileNav';
 import { ServiceWorkerRegistration } from '@/components/pwa/ServiceWorkerRegistration';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import { IntroSplash } from '@/components/ui/IntroSplash';
@@ -37,12 +38,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-zinc-50 dark:bg-[#0A0A0A] text-zinc-900 dark:text-zinc-100 h-dvh overflow-hidden flex antialiased selection:bg-blue-600 selection:text-white safe-area-inset-top safe-area-inset-bottom">
+      <body className="bg-zinc-50 dark:bg-[#0A0A0A] text-zinc-900 dark:text-zinc-100 h-dvh overflow-hidden flex flex-col lg:flex-row antialiased selection:bg-blue-600 selection:text-white safe-area-inset-top safe-area-inset-bottom">
         <ThemeProvider>
           <IntroSplash />
           <ServiceWorkerRegistration />
+          <MobileNav />
           <Sidebar />
-          <main className="flex-1 w-full flex flex-col overflow-y-auto">{children}</main>
+          <main className="flex-1 w-full flex flex-col overflow-y-auto pb-20 lg:pb-0">{children}</main>
         </ThemeProvider>
       </body>
     </html>
