@@ -10,6 +10,7 @@ import { getStorageQuota } from '@/lib/storage/migrations';
 import type { StorageQuotaInfo } from '@/types/storage';
 import { useInstallPWA } from '@/hooks/useInstallPWA';
 import { InstallPromptModal } from '@/components/pwa/InstallPromptModal';
+import { AboutPrivacyModal } from '@/components/ui/AboutPrivacyModal';
 import { 
   Volume2, 
   Aperture, 
@@ -22,11 +23,13 @@ import {
   Database,
   Download,
   Smartphone,
-  CheckCircle
+  CheckCircle,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const [quota, setQuota] = useState<StorageQuotaInfo | null>(null);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const { 
     canInstall, 
     isStandalone, 
@@ -493,6 +496,30 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* About & Privacy Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-6 shadow-2xs">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
+              About & Privacy
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
+              Learn how your photos and media stay 100% private in your browser, or review terms & app information.
+            </p>
+            <button
+              onClick={() => setIsAboutModalOpen(true)}
+              className="w-full py-2.5 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+              <span>View Privacy Policy & Terms</span>
+            </button>
+
+            <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-center">
+              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium">
+                © 2026 Wilbert Gamis • All Rights Reserved
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -504,6 +531,11 @@ export default function SettingsPage() {
         isAndroid={isAndroid}
         hasNativePrompt={hasNativePrompt}
         onInstallClick={triggerInstall}
+      />
+
+      <AboutPrivacyModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
       />
     </div>
   );
