@@ -34,4 +34,7 @@ export interface BoothState {
   storageLocation: string;
   maxStorageSize: string;
   selectedStripLayout: string;
+  showSequenceReviewModal: boolean;
+  retakeIndex: number | null;
+  sequenceShotStatusText: string | null;
 }

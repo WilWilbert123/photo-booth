@@ -7,6 +7,7 @@ import { Countdown } from './Countdown';
 import { FlashOverlay } from './FlashOverlay';
 import { PoseGuide } from './PoseGuide';
 import { EffectPanel } from './EffectPanel';
+import { PhotoStripReviewModal } from './PhotoStripReviewModal';
 import { usePhotoBooth } from '@/hooks/usePhotoBooth';
 import { useBoothStore } from '@/store/boothStore';
 import { useCameraStore } from '@/store/cameraStore';
@@ -17,6 +18,13 @@ import { useRouter } from 'next/navigation';
 export const PhotoBooth: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastNavTime = useRef<number>(0);
+  const [showFlash, setShowFlash] = useState(false);
+  const [showMobileEffects, setShowMobileEffects] = useState(false);
+
+  const triggerFlash = useCallback(() => {
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 300);
+  }, []);
 
   const handleOpenSettings = () => {
     const now = Date.now();
@@ -29,8 +37,15 @@ export const PhotoBooth: React.FC = () => {
   const [liveVideo, setLiveVideo] = useState<HTMLVideoElement | null>(null);
   const router = useRouter();
 
-  const { isCountingDown, currentCountdown, isCapturing, isProcessing, triggerCaptureSequence } =
-    usePhotoBooth(videoRef);
+  const { 
+    isCountingDown, 
+    currentCountdown, 
+    isCapturing, 
+    isProcessing, 
+    triggerCaptureSequence,
+    retakeSingleShot,
+    finalizePhotoStrip
+  } = usePhotoBooth(videoRef, triggerFlash);
 
   const { 
     isFlashEnabled, 
@@ -40,14 +55,16 @@ export const PhotoBooth: React.FC = () => {
     setMode,
     countdownDuration,
     setCountdownDuration,
-    setActiveTab
+    setActiveTab,
+    showSequenceReviewModal,
+    setShowSequenceReviewModal,
+    sequenceCapturedBlobs,
+    sequenceShotStatusText,
+    clearSequence
   } = useBoothStore();
   
   const { toggleMirror, stream, permissionState, error } = useCameraStore();
   const isCameraActive = Boolean(stream && permissionState === 'granted' && !error);
-
-  const [showFlash, setShowFlash] = useState(false);
-  const [showMobileEffects, setShowMobileEffects] = useState(false);
 
   const handleVideoAvailable = useCallback((video: HTMLVideoElement) => {
     videoRef.current = video;
@@ -56,10 +73,6 @@ export const PhotoBooth: React.FC = () => {
 
   const handleCaptureClick = () => {
     if (!isCameraActive) return;
-    if (isFlashEnabled) {
-      setShowFlash(true);
-      setTimeout(() => setShowFlash(false), 300);
-    }
     triggerCaptureSequence();
   };
 
@@ -116,6 +129,13 @@ export const PhotoBooth: React.FC = () => {
               </div>
             </button>
           </div>
+
+          {/* Live Per-Shot Status Badge Overlay */}
+          {sequenceShotStatusText && (
+            <div className="absolute top-5 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-full bg-blue-600/90 backdrop-blur-md text-white font-bold text-xs sm:text-sm tracking-wide shadow-xl animate-bounce">
+              {sequenceShotStatusText}
+            </div>
+          )}
 
           {/* Animated Countdown Overlay */}
           {isCountingDown && <Countdown count={currentCountdown} />}
@@ -190,6 +210,22 @@ export const PhotoBooth: React.FC = () => {
       <div className="hidden lg:flex h-full">
         <EffectPanel previewVideo={liveVideo} />
       </div>
+
+      {/* Photo Strip Interactive Review & Retake Modal */}
+      <PhotoStripReviewModal
+        isOpen={showSequenceReviewModal}
+        blobs={sequenceCapturedBlobs}
+        onFinalize={finalizePhotoStrip}
+        onRetakeSingle={retakeSingleShot}
+        onRetakeAll={() => {
+          setShowSequenceReviewModal(false);
+          triggerCaptureSequence();
+        }}
+        onClose={() => {
+          setShowSequenceReviewModal(false);
+          clearSequence();
+        }}
+      />
     </div>
   );
 };

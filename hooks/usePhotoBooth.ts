@@ -12,7 +12,10 @@ import { PhotoRecord, PhotoStripConfig } from '@/types/photo';
 import { EFFECTS_REGISTRY } from '@/lib/effects/registry';
 import { arTracker } from '@/lib/effects/arTracker';
 
-export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>) {
+export function usePhotoBooth(
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  onTriggerFlash?: () => void
+) {
   const {
     mode,
     selectedStripLayout,
@@ -80,35 +83,58 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
     );
   }, [videoRef, isCameraReady]);
 
+  const runSingleShotCountdown = useCallback(async (shotNum: number, totalShots: number) => {
+    const { countdownDuration, isSoundEnabled, setSequenceShotStatusText, setIsCountingDown, setCurrentCountdown } = useBoothStore.getState();
+    
+    // Each photo in a multi-shot strip runs a countdown (3s default or countdownDuration, min 2s per shot)
+    const duration = countdownDuration > 0 ? countdownDuration : 3;
+
+    setSequenceShotStatusText(`Photo ${shotNum} of ${totalShots}`);
+    setIsCountingDown(true);
+    setCurrentCountdown(duration);
+
+    for (let c = duration; c > 0; c--) {
+      useBoothStore.getState().setCurrentCountdown(c);
+      if (useBoothStore.getState().isSoundEnabled) playCountdownBeep(false);
+      await new Promise((res) => setTimeout(res, 1000));
+    }
+
+    if (useBoothStore.getState().isSoundEnabled) playCountdownBeep(true);
+    setIsCountingDown(false);
+  }, []);
+
   const triggerCaptureSequence = useCallback(() => {
     if (!isCameraReady() || isCountingDown || isCapturing) return;
 
-    if (countdownDuration === 0) {
-      executeCaptureFlow();
-      return;
-    }
-
-    setIsCountingDown(true);
-    setCurrentCountdown(countdownDuration);
-    if (isSoundEnabled) playCountdownBeep(false);
-
-    let count = countdownDuration;
-    countdownIntervalRef.current = setInterval(() => {
-      count -= 1;
-      setCurrentCountdown(count);
-
-      if (count > 0) {
-        if (isBoothSoundEnabled()) playCountdownBeep(false);
-      } else {
-        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-        if (isBoothSoundEnabled()) playCountdownBeep(true);
-        setIsCountingDown(false);
+    if (mode === 'PHOTO' || mode === 'POLAROID') {
+      if (countdownDuration === 0) {
         executeCaptureFlow();
+        return;
       }
-    }, 1000);
-  }, [countdownDuration, isCountingDown, isCapturing, isSoundEnabled, setIsCountingDown, setCurrentCountdown]); // Intentionally omitting executeCaptureFlow to avoid recreating interval, executeCaptureFlow uses getState.
 
-  // Helper to get fresh sound state inside setInterval
+      setIsCountingDown(true);
+      setCurrentCountdown(countdownDuration);
+      if (isSoundEnabled) playCountdownBeep(false);
+
+      let count = countdownDuration;
+      countdownIntervalRef.current = setInterval(() => {
+        count -= 1;
+        setCurrentCountdown(count);
+
+        if (count > 0) {
+          if (isBoothSoundEnabled()) playCountdownBeep(false);
+        } else {
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          if (isBoothSoundEnabled()) playCountdownBeep(true);
+          setIsCountingDown(false);
+          executeCaptureFlow();
+        }
+      }, 1000);
+    } else {
+      executeCaptureFlow();
+    }
+  }, [countdownDuration, mode, isCountingDown, isCapturing, isSoundEnabled, setIsCountingDown, setCurrentCountdown]);
+
   const isBoothSoundEnabled = () => useBoothStore.getState().isSoundEnabled;
 
   const executeCaptureFlow = useCallback(async () => {
@@ -123,6 +149,9 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
 
     try {
       if (mode === 'PHOTO' || mode === 'POLAROID') {
+        if (onTriggerFlash && useBoothStore.getState().isFlashEnabled) {
+          onTriggerFlash();
+        }
         const blob = await captureSingleSnapshot();
         setIsProcessing(true);
         const thumbnailBlob = await createThumbnailFromBlob(blob);
@@ -146,55 +175,32 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
         const shotCount = preset.shotCount || 4;
 
         startSequence(shotCount);
-        const sequenceBlobs: Blob[] = [];
 
         for (let shot = 1; shot <= shotCount; shot++) {
+          // 1. Per-shot countdown
+          await runSingleShotCountdown(shot, shotCount);
+
+          // 2. Screen Flash!
+          if (onTriggerFlash && useBoothStore.getState().isFlashEnabled) {
+            onTriggerFlash();
+          }
+
+          // 3. Capture Snapshot
           const blob = await captureSingleSnapshot();
-          sequenceBlobs.push(blob);
           addSequenceBlob(blob);
 
-          // Brief delay between shots
+          // 4. Brief status pause before next photo
           if (shot < shotCount) {
+            useBoothStore.getState().setSequenceShotStatusText(`Photo ${shot} Captured! Get ready...`);
             await new Promise((res) => setTimeout(res, 1200));
           }
         }
 
-        setIsProcessing(true);
-        // Generate themed photo strip
-        const stripBlob = await createPhotoStripBlob(sequenceBlobs, {
-          layout: preset.id as PhotoStripConfig['layout'],
-          backgroundColor: preset.backgroundColor,
-          borderColor: preset.borderColor,
-          borderWidth: 20,
-          padding: 24,
-          headerText: preset.defaultHeader,
-          subtitleText: preset.defaultSubtitle,
-          badgeText: preset.badgeText,
-          showDate: true,
-        });
-
-        const thumbnailBlob = await createThumbnailFromBlob(stripBlob);
-
-        const record: PhotoRecord = {
-          id: `strip_${preset.id}_${Date.now()}`,
-          originalBlob: stripBlob,
-          processedBlob: stripBlob,
-          thumbnailBlob,
-          createdAt: Date.now(),
-          width: 720,
-          height: 2400,
-          effectId: activeEffectId,
-          effectSettings: { strength },
-          type: 'strip',
-          metadata: {
-            title: preset.defaultHeader,
-          },
-        };
-
-        await savePhotoToDB(record);
-        clearSequence();
+        // Open Review Modal instead of saving silently!
+        useBoothStore.getState().setSequenceShotStatusText(null);
+        useBoothStore.getState().setShowSequenceReviewModal(true);
+        setIsCapturing(false);
       } else if (mode === 'BOOMERANG' || mode === 'GIF') {
-        // Capture rapid 8 frames
         const frameBlobs: Blob[] = [];
         for (let f = 0; f < 8; f++) {
           const blob = await captureSingleSnapshot();
@@ -227,7 +233,85 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
       setIsCapturing(false);
       setIsProcessing(false);
     }
-  }, [captureSingleSnapshot, startSequence, addSequenceBlob, clearSequence, setIsCapturing]);
+  }, [captureSingleSnapshot, startSequence, addSequenceBlob, isCameraReady, onTriggerFlash, runSingleShotCountdown, setIsCapturing]);
+
+  const retakeSingleShot = useCallback(async (index: number) => {
+    if (!isCameraReady()) return;
+
+    const { sequenceTotalShots, setShowSequenceReviewModal, setRetakeIndex, setSequenceShotStatusText, replaceSequenceBlob } = useBoothStore.getState();
+    
+    setShowSequenceReviewModal(false);
+    setRetakeIndex(index);
+    setIsCapturing(true);
+
+    try {
+      await runSingleShotCountdown(index + 1, sequenceTotalShots);
+
+      if (onTriggerFlash && useBoothStore.getState().isFlashEnabled) {
+        onTriggerFlash();
+      }
+
+      const newBlob = await captureSingleSnapshot();
+      replaceSequenceBlob(index, newBlob);
+    } catch (e) {
+      console.error("Retake error:", e);
+    } finally {
+      setIsCapturing(false);
+      setRetakeIndex(null);
+      setSequenceShotStatusText(null);
+      setShowSequenceReviewModal(true);
+    }
+  }, [isCameraReady, runSingleShotCountdown, captureSingleSnapshot, onTriggerFlash, setIsCapturing]);
+
+  const finalizePhotoStrip = useCallback(async () => {
+    const { sequenceCapturedBlobs, selectedStripLayout, clearSequence, setShowSequenceReviewModal } = useBoothStore.getState();
+    const { activeEffectId, strength } = useEffectStore.getState();
+
+    if (!sequenceCapturedBlobs || sequenceCapturedBlobs.length === 0) return;
+
+    setShowSequenceReviewModal(false);
+    setIsProcessing(true);
+
+    try {
+      const preset = getStripPreset(selectedStripLayout);
+      const stripBlob = await createPhotoStripBlob(sequenceCapturedBlobs, {
+        layout: preset.id as PhotoStripConfig['layout'],
+        backgroundColor: preset.backgroundColor,
+        borderColor: preset.borderColor,
+        borderWidth: 20,
+        padding: 24,
+        headerText: preset.defaultHeader,
+        subtitleText: preset.defaultSubtitle,
+        badgeText: preset.badgeText,
+        showDate: true,
+      });
+
+      const thumbnailBlob = await createThumbnailFromBlob(stripBlob);
+
+      const record: PhotoRecord = {
+        id: `strip_${preset.id}_${Date.now()}`,
+        originalBlob: stripBlob,
+        processedBlob: stripBlob,
+        thumbnailBlob,
+        createdAt: Date.now(),
+        width: 720,
+        height: 2400,
+        effectId: activeEffectId,
+        effectSettings: { strength },
+        type: 'strip',
+        metadata: {
+          title: preset.defaultHeader,
+        },
+      };
+
+      await savePhotoToDB(record);
+      clearSequence();
+    } catch (err) {
+      console.error('Failed to finalize photo strip:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
 
   return {
     isCountingDown,
@@ -235,5 +319,7 @@ export function usePhotoBooth(videoRef: React.RefObject<HTMLVideoElement | null>
     isCapturing,
     isProcessing,
     triggerCaptureSequence,
+    retakeSingleShot,
+    finalizePhotoStrip,
   };
 }
