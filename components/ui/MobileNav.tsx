@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useRef, useTransition, useEffect } from 'react';
+import React, { useRef, useTransition, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Camera, Image as ImageIcon, Settings, Download, Smartphone } from 'lucide-react';
+import { Camera, Image as ImageIcon, Settings, Download, Smartphone, ShieldCheck } from 'lucide-react';
 import { useBoothStore } from '@/store/boothStore';
 import { useInstallPWA } from '@/hooks/useInstallPWA';
 import { InstallPromptModal } from '../pwa/InstallPromptModal';
+import { AboutPrivacyModal } from './AboutPrivacyModal';
 
 export const MobileNav: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { theme, setTheme, activeTab, setActiveTab } = useBoothStore();
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const lastNavTime = useRef<number>(0);
 
   const { 
@@ -91,6 +93,16 @@ export const MobileNav: React.FC = () => {
             </button>
           )}
 
+          {/* About & Privacy Button */}
+          <button
+            onClick={() => setIsAboutModalOpen(true)}
+            className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center border border-zinc-200 dark:border-zinc-700 hover:scale-105 transition-transform"
+            aria-label="About & Privacy"
+            title="About & Privacy"
+          >
+            <ShieldCheck className="w-4 h-4" />
+          </button>
+
           {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -142,6 +154,11 @@ export const MobileNav: React.FC = () => {
         isAndroid={isAndroid}
         hasNativePrompt={hasNativePrompt}
         onInstallClick={triggerInstall}
+      />
+
+      <AboutPrivacyModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
       />
     </>
   );
