@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { EffectDefinition } from '@/types/effect';
 import { effectEngine } from '@/lib/effects/engine';
 
@@ -24,39 +24,88 @@ export const EffectCard: React.FC<EffectCardProps> = ({
   previewVideo,
   sampleImage,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<number | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  const render = useCallback(() => {
+  // IntersectionObserver to pause rendering for offscreen cards
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  const render = useCallback((source: CanvasImageSource) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    // Prefer live camera, fall back to sample image
-    const source: CanvasImageSource | null = previewVideo ?? sampleImage ?? null;
-    if (!source) return;
 
     if (canvas.width !== CARD_W) canvas.width = CARD_W;
     if (canvas.height !== CARD_H) canvas.height = CARD_H;
 
     effectEngine.renderToCanvas(source, canvas, effect.id, 100, false);
-  }, [previewVideo, sampleImage, effect.id]);
+  }, [effect.id]);
 
   useEffect(() => {
     let alive = true;
+    let lastDrawTime = 0;
+    // Selected card updates at 15 FPS; unselected visible cards update at 8 FPS
+    const targetFps = isSelected ? 15 : 8;
+    const intervalMs = 1000 / targetFps;
 
-    if (previewVideo) {
-      // Live camera – render every frame
-      const loop = () => {
+    // If card is not in viewport, stop rendering entirely
+    if (!isVisible) {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      return;
+    }
+
+    // Prefer live video if available for selected card, fall back to static sampleImage for unselected
+    if (previewVideo && isSelected) {
+      const loop = (timestamp: number) => {
         if (!alive) return;
-        if (previewVideo.readyState >= 2 && previewVideo.videoWidth > 0) {
-          render();
+        if (timestamp - lastDrawTime >= intervalMs) {
+          if (previewVideo.readyState >= 2 && previewVideo.videoWidth > 0) {
+            render(previewVideo);
+            lastDrawTime = timestamp;
+          }
         }
         frameRef.current = requestAnimationFrame(loop);
       };
-      loop();
+      frameRef.current = requestAnimationFrame(loop);
     } else if (sampleImage) {
-      // Static image – render once (no animation loop needed)
-      render();
+      // Static image – render once when visible
+      render(sampleImage);
+    } else if (previewVideo) {
+      // Unselected card with live camera fallback – throttled loop
+      const loop = (timestamp: number) => {
+        if (!alive) return;
+        if (timestamp - lastDrawTime >= intervalMs) {
+          if (previewVideo.readyState >= 2 && previewVideo.videoWidth > 0) {
+            render(previewVideo);
+            lastDrawTime = timestamp;
+          }
+        }
+        frameRef.current = requestAnimationFrame(loop);
+      };
+      frameRef.current = requestAnimationFrame(loop);
     }
 
     return () => {
@@ -66,10 +115,11 @@ export const EffectCard: React.FC<EffectCardProps> = ({
         frameRef.current = null;
       }
     };
-  }, [previewVideo, sampleImage, render]);
+  }, [previewVideo, sampleImage, isSelected, isVisible, render]);
 
   return (
     <div
+      ref={containerRef}
       onClick={() => onSelect(effect.id)}
       className="flex flex-col cursor-pointer group select-none"
     >
@@ -110,3 +160,4 @@ export const EffectCard: React.FC<EffectCardProps> = ({
     </div>
   );
 };
+

@@ -40,7 +40,14 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream;
+      }
+      videoRef.current.play().catch((err) => {
+        if (err.name !== 'AbortError') {
+          console.warn('Camera video play error:', err);
+        }
+      });
       if (onVideoRefAvailable) {
         onVideoRefAvailable(videoRef.current);
       }
