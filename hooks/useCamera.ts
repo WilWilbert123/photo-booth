@@ -40,8 +40,9 @@ export function useCamera() {
     }
 
     try {
-      if (stream) {
-        stopMediaStream(stream);
+      const currentStream = useCameraStore.getState().stream;
+      if (currentStream) {
+        stopMediaStream(currentStream);
       }
 
       const newStream = await requestCameraStream(facingMode, resolution, activeDeviceId);
@@ -69,8 +70,10 @@ export function useCamera() {
     initCamera();
 
     return () => {
-      if (stream) {
-        stopMediaStream(stream);
+      const activeStream = useCameraStore.getState().stream;
+      if (activeStream) {
+        stopMediaStream(activeStream);
+        setStream(null);
       }
     };
   }, [facingMode, activeDeviceId, resolution]);
